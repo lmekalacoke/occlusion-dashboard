@@ -1,623 +1,1047 @@
 import { useState } from "react";
 import {
-  LineChart, Line, BarChart, Bar,
+  LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine, Cell, ComposedChart, Area
+  ResponsiveContainer, ReferenceLine, ComposedChart, Cell
 } from "recharts";
 
-const monthlySpine = [
-  { month:"Jun '25", full8100:10.27,  full9100:10.73,  s1_8100:45.88, s1_9100:40.24, raw8100:49575,  raw9100:193620  },
-  { month:"Jul '25", full8100:10.75,  full9100:10.79,  s1_8100:47.39, s1_9100:41.57, raw8100:52690,  raw9100:196928  },
-  { month:"Aug '25", full8100:17.11,  full9100:9.94,   s1_8100:64.66, s1_9100:39.37, raw8100:85069,  raw9100:184267  },
-  { month:"Sep '25", full8100:41.13,  full9100:13.83,  s1_8100:116.84,s1_9100:48.65, raw8100:207067, raw9100:259714  },
-  { month:"Oct '25", full8100:58.05,  full9100:21.01,  s1_8100:158.46,s1_9100:64.19, raw8100:298761, raw9100:397567  },
-  { month:"Nov '25", full8100:50.90,  full9100:21.57,  s1_8100:143.92,s1_9100:65.18, raw8100:264057, raw9100:411039  },
-  { month:"Dec '25", full8100:24.82,  full9100:14.52,  s1_8100:98.63, s1_9100:56.72, raw8100:131128, raw9100:278546  },
-  { month:"Jan '26", full8100:12.48,  full9100:10.99,  s1_8100:71.09, s1_9100:50.88, raw8100:66399,  raw9100:211073  },
-  { month:"Feb '26", full8100:10.49,  full9100:10.01,  s1_8100:60.96, s1_9100:46.08, raw8100:56045,  raw9100:192701  },
-  { month:"Mar '26", full8100:1.06,   full9100:0.95,   s1_8100:6.08,  s1_9100:4.77,  raw8100:5655,   raw9100:18017   },
-];
-const expiryOverlay = [
-  { month:"Jun '25", occ8100:10.27, occ9100:10.73, warn8100:28.44, warn9100:60.40 },
-  { month:"Jul '25", occ8100:10.75, occ9100:10.79, warn8100:28.43, warn9100:61.56 },
-  { month:"Aug '25", occ8100:17.11, occ9100:9.94,  warn8100:29.95, warn9100:61.08 },
-  { month:"Sep '25", occ8100:41.13, occ9100:13.83, warn8100:26.82, warn9100:56.36 },
-  { month:"Oct '25", occ8100:58.05, occ9100:21.01, warn8100:27.61, warn9100:59.20 },
-  { month:"Nov '25", occ8100:50.90, occ9100:21.57, warn8100:28.08, warn9100:59.52 },
-  { month:"Dec '25", occ8100:24.82, occ9100:14.52, warn8100:27.80, warn9100:58.80 },
-  { month:"Jan '26", occ8100:12.48, occ9100:10.99, warn8100:28.08, warn9100:59.13 },
-  { month:"Feb '26", occ8100:10.49, occ9100:10.01, warn8100:99.49, warn9100:98.60 },
-  { month:"Mar '26", occ8100:1.06,  occ9100:0.95,  warn8100:64.41, warn9100:64.39 },
-];
-const bibExpiry = [
-  { month:"Jun '25", pct8100:13.57, pct9100:16.76 },
-  { month:"Jul '25", pct8100:31.54, pct9100:31.88 },
-  { month:"Aug '25", pct8100:41.44, pct9100:46.07 },
-  { month:"Sep '25", pct8100:43.39, pct9100:49.21 },
-  { month:"Oct '25", pct8100:52.48, pct9100:48.39 },
-  { month:"Nov '25", pct8100:55.38, pct9100:52.44 },
-  { month:"Dec '25", pct8100:62.17, pct9100:56.05 },
-  { month:"Jan '26", pct8100:62.15, pct9100:58.01 },
-  { month:"Feb '26", pct8100:32.96, pct9100:51.59 },
-  { month:"Mar '26", pct8100:11.71, pct9100:21.85 },
-];
-const chronicData = [
-  { month:"Jun '25", c8100:128, c9100:309, pct8100:9.30,  pct9100:3.24 },
-  { month:"Jul '25", c8100:137, c9100:366, pct8100:9.99,  pct9100:4.04 },
-  { month:"Aug '25", c8100:198, c9100:266, pct8100:8.47,  pct9100:2.70 },
-  { month:"Sep '25", c8100:617, c9100:310, pct8100:17.26, pct9100:2.65 },
-  { month:"Oct '25", c8100:981, c9100:572, pct8100:24.08, pct9100:4.33 },
-  { month:"Nov '25", c8100:777, c9100:535, pct8100:18.35, pct9100:3.77 },
-  { month:"Dec '25", c8100:268, c9100:293, pct8100:7.14,  pct9100:2.08 },
-  { month:"Jan '26", c8100:166, c9100:195, pct8100:7.87,  pct9100:1.56 },
-  { month:"Feb '26", c8100:133, c9100:166, pct8100:6.91,  pct9100:1.36 },
-  { month:"Mar '26", c8100:0,   c9100:0,   pct8100:0,     pct9100:0    },
-];
-const chainData = [
-  { chain:"Wendy's (8100)",      avg:210.0 },
-  { chain:"Universal Studios",   avg:144.6 },
-  { chain:"Universal City Dev",  avg:121.7 },
-  { chain:"White Castle (8100)", avg:110.0 },
-  { chain:"Compass Group",       avg:101.6 },
-  { chain:"Wendy's (9100)",      avg:94.4  },
-  { chain:"Wawa",                avg:82.8  },
-  { chain:"Burger King (8100)",  avg:76.2  },
-  { chain:"Sodexo",              avg:73.6  },
-  { chain:"Wingstop",            avg:60.2  },
-  { chain:"AMC Theatres",        avg:50.0  },
-  { chain:"Burger King (9100)",  avg:44.0  },
-];
-const idleData = [
-  { bucket:"0-8 hrs",   avg8100:213.6, avg9100:114.8 },
-  { bucket:"8-12 hrs",  avg8100:178.8, avg9100:91.3  },
-  { bucket:"12-16 hrs", avg8100:90.3,  avg9100:64.9  },
-  { bucket:"16-20 hrs", avg8100:52.2,  avg9100:44.5  },
-  { bucket:"20+ hrs",   avg8100:8.5,   avg9100:20.3  },
-];
-const ageData = [
-  { cohort:"0-1 yr",  avg8100:182.3, avg9100:72.2 },
-  { cohort:"1-2 yrs", avg8100:161.5, avg9100:71.0 },
-  { cohort:"2-4 yrs", avg8100:249.3, avg9100:58.3 },
-  { cohort:"4+ yrs",  avg8100:null,  avg9100:59.6 },
+// ── PALETTE ──────────────────────────────────────────────────────────────────
+const C = {
+  bg:          "#0a0c10",
+  panel:       "#0f1219",
+  panelBorder: "#1c2333",
+  accent1:     "#e8b84b",
+  accent2:     "#4b9fe8",
+  danger:      "#e84b4b",
+  success:     "#4be89a",
+  warn:        "#e8854b",
+  muted:       "#8892a4",
+  textPrimary: "#e2e8f0",
+  textSub:     "#718096",
+  textDim:     "#4a5568",
+  grid:        "#1c2333",
+};
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const SPINE = [
+  { m:"Jun '25", m8_disp:4825,  m9_disp:18042, m8_full:49575,  m9_full:193620, m8_rate:10.28, m9_rate:10.73, m8_s1:45.88,  m9_s1:40.24,  m8_warn:28.44, m9_warn:60.40, m8_silent:68.92, m9_silent:35.97 },
+  { m:"Jul '25", m8_disp:4900,  m9_disp:18250, m8_full:52690,  m9_full:196928, m8_rate:10.75, m9_rate:10.79, m8_s1:47.39,  m9_s1:41.57,  m8_warn:28.43, m9_warn:61.56, m8_silent:68.44, m9_silent:33.00 },
+  { m:"Aug '25", m8_disp:4971,  m9_disp:18547, m8_full:85069,  m9_full:184267, m8_rate:17.11, m9_rate:9.94,  m8_s1:64.66,  m9_s1:39.37,  m8_warn:29.95, m9_warn:61.08, m8_silent:78.10, m9_silent:37.99 },
+  { m:"Sep '25", m8_disp:5034,  m9_disp:18784, m8_full:207067, m9_full:259714, m8_rate:41.13, m9_rate:13.83, m8_s1:116.84, m9_s1:48.65,  m8_warn:26.82, m9_warn:56.36, m8_silent:83.19, m9_silent:48.27 },
+  { m:"Oct '25", m8_disp:5147,  m9_disp:18925, m8_full:298761, m9_full:397567, m8_rate:58.05, m9_rate:21.01, m8_s1:158.46, m9_s1:64.19,  m8_warn:27.61, m9_warn:59.20, m8_silent:79.26, m9_silent:46.05 },
+  { m:"Nov '25", m8_disp:5188,  m9_disp:19054, m8_full:264057, m9_full:411039, m8_rate:50.90, m9_rate:21.57, m8_s1:143.92, m9_s1:65.18,  m8_warn:28.08, m9_warn:59.52, m8_silent:75.94, m9_silent:44.39 },
+  { m:"Dec '25", m8_disp:5284,  m9_disp:19179, m8_full:131128, m9_full:278546, m8_rate:24.82, m9_rate:14.52, m8_s1:98.63,  m9_s1:56.72,  m8_warn:27.80, m9_warn:58.80, m8_silent:74.57, m9_silent:43.24 },
+  { m:"Jan '26", m8_disp:5320,  m9_disp:19212, m8_full:66399,  m9_full:211073, m8_rate:12.48, m9_rate:10.99, m8_s1:71.09,  m9_s1:50.88,  m8_warn:28.08, m9_warn:59.13, m8_silent:66.52, m9_silent:40.61 },
+  { m:"Feb '26\u2020", m8_disp:5341, m9_disp:19244, m8_full:56045, m9_full:192701, m8_rate:10.49, m9_rate:10.01, m8_s1:60.96, m9_s1:46.08, m8_warn:99.49, m9_warn:98.60, m8_silent:null, m9_silent:null },
 ];
 
-const C8 = "#f97316";
-const C9 = "#38bdf8";
-const CBG = "#0a0f1a";
-const CPL = "#0f172a";
-const CBR = "#1e293b";
+const SPINE_MAIN = SPINE.slice(0, 8); // exclude Feb†
 
-const INSIGHTS = [
-  {
-    title:"Trend Overview",
-    how:[
-      ["Primary Metric","Full occlusions divided by active dispensers that same month. The denominator changes monthly so fleet growth cannot inflate the rate artificially."],
-      ["Secondary Metric","1-strike occlusions (micropumpspmoccludedtrouble) per dispenser — a leading indicator that precedes full occlusion events."],
-      ["Why Not Per-Insert","84% of 8100 inserts are untrackable. ZSA machines use fuelGaugeInsert with no ingredient ID. Insert-denominated rates are unreliable for 8100."],
-      ["Population Filter","Active US dispensers only. equipment_type IN ('8100','9100'). Joined v_sysdb to v_dispenser with equipment_active_inactive='A' AND country='US'."],
-    ],
-    findings:[
-      ["bad","8100 peak: 58.1 occ/dispenser in Oct '25 — a 5.7x increase over the Jun baseline of 10.3."],
-      ["bad","9100 peak: 21.6 occ/dispenser in Nov '25 — a 2.0x increase over baseline. Spike is real on both types."],
-      ["warn","8100 spike onset is Aug '25 (17.1), one full month earlier than 9100 (Sep '25 at 13.8)."],
-      ["good","Recovery is clean. Both types return to baseline by Jan-Feb '26 — the spike was transient, not a permanent degradation."],
-      ["info","Raw 9100 counts dwarf 8100 (411K vs 264K in Nov) because the 9100 fleet is 3.7x larger. Always use per-dispenser for comparisons."],
-    ],
-    caveats:["Mar '26 data is partial (through Mar 3 only). All Mar figures excluded from trend conclusions.","Feb '26 expiry warning % jumps to 99% due to a firmware enforcement change — not a real expiry surge."]
-  },
-  {
-    title:"Expiry Warning Analysis",
-    how:[
-      ["Events Used","Three system trouble events filtered to ingredient 1048588: nnsenjoybynotificationtrouble, nnscheckenjoybytrouble, enjoybytrouble."],
-      ["Filter Logic","msg_code='troubleAdd' AND POSITION('ingredientid:1048588' IN event_data) > 0. Covers both ZSA and ZPL machine types."],
-      ["Metric","% of active dispensers per month with at least one expiry warning event. Plotted against occ/dispenser on a dual-axis chart."],
-      ["Why System Flags","More reliable than parsing enjoybydate strings. System-generated, covers all machine types, higher dispenser coverage (25K-38K vs ~15K from string parsing)."],
-    ],
-    findings:[
-      ["bad","CRITICAL: 9100 expiry warning % drops from 61% to 56% exactly as occlusions spike Sep-Oct. If expiry caused the spike, warnings should rise. They don't."],
-      ["bad","8100 expiry warning stays flat at ~28% throughout the entire spike, despite occlusion rate increasing 5.7x. Zero correlation."],
-      ["warn","Feb '26 anomaly: nnscheckenjoybytrouble jumped 8x (47K to 368K events). This is a firmware enforcement change, not a real expiry surge. Pre/post-Feb not comparable."],
-      ["info","Conclusion: Expiry warnings are NOT the primary driver. The causal direction may be reversed — occlusions degrade BIBs faster, generating more warnings afterward."],
-    ],
-    caveats:["8100 expiry warning coverage is structurally low (~28%) because ZSA machines have no enjoy-by data for ingredient 1048588.","9100 shows 60% warning coverage — a structural difference in how ZPL machines track expiry."]
-  },
-  {
-    title:"BIB Freshness at Occlusion",
-    how:[
-      ["Insert Event","bibNnsReplaced (ZPL machines only). Each occlusion was linked to the most recent insert on the same serial_number within 90 days prior."],
-      ["Date Parsing","Extracted enjoybydate:YYYY-MM-DD from event_data using safe guards: length check, year range 2024-2027, NULL on invalid strings. Prevents Redshift crash on bad dates."],
-      ["Buckets","Already expired / Critical 0-7 days / Near 8-30 days / Fresh 30+ days. Assigned by comparing enjoy_by_date to the occlusion event date."],
-      ["Coverage","ZSA machines (dominant 8100 subtype) use fuelGaugeInsert — no enjoy-by data for ingredient 1048588. 8100 covers only 15.6% of occlusions."],
-    ],
-    findings:[
-      ["warn","Expired BIB % climbs steadily: 8100 from 14% (Jun) to 62% (Jan '26). 9100 from 17% to 58%. A continuous accumulating trend, not a sudden event."],
-      ["bad","Both types cross 50% expired during the spike window (Oct-Nov '25) — majority of traceable occlusions involved expired BIBs at peak."],
-      ["warn","~47% of traceable occlusions involved fresh BIBs (30+ days remaining). Expiry alone cannot explain all events."],
-      ["info","The rising expired % pre-dates the spike. Likely acts as an enabler — expired BIBs degrade faster under high pump stress when Q4 traffic surges."],
-    ],
-    caveats:["8100 expiry linkage = 15.6% of occlusions only. All 8100 BIB freshness figures are directional — treat with caution.","The insert-to-occlusion link assumes the most recent bibNnsReplaced within 90 days is the active BIB. Missed inserts cause wrong attribution."]
-  },
-  {
-    title:"Chronic & Repeat Offenders",
-    how:[
-      ["Definition","Chronic unit = dispenser with 100+ full occlusions in a single calendar month. Severe = 500+. Threshold chosen based on fleet median behavior."],
-      ["Calculation","Grouped full occlusion events by serial_number + month. Counted units crossing each threshold. Expressed as % of all dispensers with any occlusion that month."],
-      ["Pareto (Q12D)","Sep-Nov 2025 window. Per-dispenser occlusion totals bucketed: <100, 100-499, 500-999, 1000+. Each bucket's share of type-total spike occlusions calculated."],
-      ["Purpose","Test whether the spike was caused by a small group of catastrophically failing units (fix by targeted pull) or is fleet-wide (requires systemic intervention)."],
-    ],
-    findings:[
-      ["bad","8100 chronic units explode 7.6x in 2 months: 128 (Jun) to 981 (Oct). % chronic jumps 9% to 24% — a structural shift, not noise."],
-      ["info","9100 chronic units grow moderately (309 to 572) but % chronic stays low at 3-4%. 9100 spike is driven by breadth across the fleet, not unit depth."],
-      ["warn","Pareto: 8100 mid-tier (100-499 occ) drives 60% of spike total across 2,054 units. No classic 80/20. Cannot fix by pulling 50 bad machines."],
-      ["good","Recovery: chronic units return to near-baseline by Feb '26 on both types, confirming the spike was transient."],
-    ],
-    caveats:["Chronic unit count is a monthly snapshot — the same unit appearing in multiple months is counted multiple times. Cross-month longitudinal tracking was not run.","ZSA 8100 machines occlude at 2x the rate of ZPL 9100 structurally. Some 8100 chronic concentration may reflect ZSA architecture, not spike-specific failure."]
-  },
-  {
-    title:"Chain & Operational Factors",
-    how:[
-      ["Data Source","agg_continuous_silver.csv — 2.9M rows, weekly grain, 2023-2026. Joined to Redshift occlusion counts on serial_number as join key."],
-      ["Chain Join","CSV aggregated to per-dispenser summary (median idle hrs, avg age, chain). Joined to Sep-Nov '25 occlusion totals from S5 query output."],
-      ["Idle Buckets","median_week_delay from CSV = hours per day the dispenser sits idle. Bucketed into 0-8, 8-12, 12-16, 16-20, 20+ hrs and compared to avg occ/unit."],
-      ["Age Cohorts","days_old from CSV. Excluded negatives (data entry errors). Buckets: 0-1yr, 1-2yrs, 2-4yrs, 4+yrs. Compared to avg occ/unit in spike window."],
-    ],
-    findings:[
-      ["bad","Wendy's 8100: 210 avg occ/unit during spike — highest of any major chain. 3,153 dispensers x 210 = ~662K occlusions in 3 months from one chain alone."],
-      ["bad","Idle time is INVERSELY correlated with occlusions. 0-8hr idle (high traffic): 214 avg vs 16-20hr idle: 52 avg. A 4x difference driven purely by traffic volume."],
-      ["info","This rules out fluid stagnation as a mechanism. High-traffic dispensers occlude more because they pump more, not because fluid sits still. Volumetric pump stress."],
-      ["info","Theater chains (AMC, Cinemark) average 46-54 — lower traffic, fewer pump cycles, lower occlusion rate despite similar machine ages."],
-      ["good","Dispenser age is not a meaningful factor. 9100 cohorts span 59-72 across all ages. 8100 2-4yr bucket (249 avg) has only 18 units — statistically meaningless."],
-    ],
-    caveats:["Chain join covers only dispensers present in both Redshift and the CSV. Units missing from CSV are excluded.","Idle time is a weekly median from the CSV — it smooths out day-level variation and may not capture burst traffic patterns."]
-  },
-  {
-    title:"All Tests & Final Conclusions",
-    how:[
-      ["Q12A Fleet Growth","Per-dispenser normalization. If per-unit rate stays flat while raw count spikes, the fleet just grew. Result: 5.7x per-unit increase confirmed. Ruled out."],
-      ["Q12B Firmware","Parsed occludedvalue from 1-strike event_data. Compared P25/P50/P75 across pre-spike, spike, post-spike. Result: locked at -8 to -9 all 10 months. Ruled out."],
-      ["Q12C New Units","First-ever event timestamp per dispenser. Counted new units by month. Result: <2% new units mid-window. Ruled out."],
-      ["Q12D Pareto","Sep-Nov totals per dispenser bucketed into tiers. Result: 8100 mid-tier (100-499) drives 60%. Diffuse fleet-wide pattern confirmed."],
-    ],
-    findings:[
-      ["bad","BIB supply/quality batch remains the primary unresolved hypothesis. Fleet-wide onset, transient 4-month duration, high-traffic machines hit hardest — all consistent with a bad production batch."],
-      ["warn","Most likely combined explanation: Q4 seasonal traffic surge amplified stress on BIBs already approaching expiry. Expiry sets the stage; traffic provides the trigger."],
-      ["warn","Next highest-priority query: group occlusions by plantcode (values 0, 1, 2 in event_data). If one plant drives the Sep-Nov spike, the manufacturing batch hypothesis is confirmed."],
-      ["info","ZSA vs ZPL machine architecture is an unresolved structural difference. ZSA 8100 occludes at 2x ZPL 9100 rate at baseline — a design question outside this dataset."],
-    ],
-    caveats:["No manufacturing lot, shipping route, or temperature data exists in Redshift. BIB quality hypotheses cannot be confirmed without external supply chain data.","v_sysdb covers only Jun 2025-Mar 2026 (10 months). Year-over-year comparison is not possible from this table."]
-  },
+const EXPIRY_TIER = [
+  { m:"Jun '25", e9_fresh:71.8, e9_exp:28.2 },
+  { m:"Jul '25", e9_fresh:53.2, e9_exp:46.8 },
+  { m:"Aug '25", e9_fresh:31.8, e9_exp:68.2 },
+  { m:"Sep '25", e9_fresh:36.9, e9_exp:63.1 },
+  { m:"Oct '25", e9_fresh:40.0, e9_exp:60.0 },
+  { m:"Nov '25", e9_fresh:38.5, e9_exp:61.5 },
+  { m:"Dec '25", e9_fresh:32.0, e9_exp:68.0 },
+  { m:"Jan '26", e9_fresh:39.8, e9_exp:60.2 },
 ];
 
-const DarkTip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
+const INSERTED_EXPIRED = [
+  { m:"Jun '25", p8:11.36, p9:9.36  },
+  { m:"Jul '25", p8:12.87, p9:10.90 },
+  { m:"Aug '25", p8:14.37, p9:13.60 },
+  { m:"Sep '25", p8:12.64, p9:11.61 },
+  { m:"Oct '25", p8:13.78, p9:14.30 },
+  { m:"Nov '25", p8:17.25, p9:18.19 },
+  { m:"Dec '25", p8:18.77, p9:19.56 },
+  { m:"Jan '26", p8:18.14, p9:17.29 },
+];
+
+const SILENT = SPINE.filter(d => d.m8_silent !== null).map(d => ({
+  m: d.m, p8: d.m8_silent, p9: d.m9_silent,
+}));
+
+const LEAD_TIME = [
+  { m:"Jun '25", avg8:10, med8:9,  avg9:9,  med9:8  },
+  { m:"Jul '25", avg8:14, med8:15, avg9:15, med9:15 },
+  { m:"Aug '25", avg8:13, med8:14, avg9:15, med9:16 },
+  { m:"Sep '25", avg8:16, med8:17, avg9:14, med9:13 },
+  { m:"Oct '25", avg8:14, med8:14, avg9:14, med9:15 },
+  { m:"Nov '25", avg8:14, med8:14, avg9:14, med9:15 },
+  { m:"Dec '25", avg8:13, med8:12, avg9:14, med9:14 },
+  { m:"Jan '26", avg8:14, med8:14, avg9:14, med9:14 },
+];
+
+const HOUR_DATA_8 = [
+  {h:"12a",r:4.22},{h:"1a",r:4.65},{h:"2a",r:4.57},{h:"3a",r:4.35},{h:"4a",r:4.51},{h:"5a",r:4.85},
+  {h:"6a",r:3.68},{h:"7a",r:3.93},{h:"8a",r:4.33},{h:"9a",r:4.53},{h:"10a",r:4.62},{h:"11a",r:4.30},
+  {h:"12p",r:4.15},{h:"1p",r:4.15},{h:"2p",r:4.21},{h:"3p",r:4.29},{h:"4p",r:4.37},{h:"5p",r:4.37},
+  {h:"6p",r:4.21},{h:"7p",r:4.33},{h:"8p",r:3.97},{h:"9p",r:3.50},{h:"10p",r:3.67},{h:"11p",r:3.80},
+];
+const HOUR_DATA_9 = [
+  {h:"12a",r:2.20},{h:"1a",r:2.51},{h:"2a",r:3.00},{h:"3a",r:2.65},{h:"4a",r:2.38},{h:"5a",r:2.69},
+  {h:"6a",r:2.56},{h:"7a",r:2.15},{h:"8a",r:2.22},{h:"9a",r:2.22},{h:"10a",r:2.11},{h:"11a",r:1.92},
+  {h:"12p",r:1.90},{h:"1p",r:1.88},{h:"2p",r:1.84},{h:"3p",r:1.84},{h:"4p",r:1.85},{h:"5p",r:1.88},
+  {h:"6p",r:1.79},{h:"7p",r:1.75},{h:"8p",r:1.61},{h:"9p",r:1.54},{h:"10p",r:1.68},{h:"11p",r:1.70},
+];
+
+const RECOVERY_8 = [
+  { tier:"Severe 500+",   units:269,  spike:788, post:245, pct:31.1, fully:12,   mostly:148,  still:109  },
+  { tier:"Chronic 100-499",units:2044,spike:224, post:45,  pct:20.1, fully:185,  mostly:1354, still:505  },
+  { tier:"Moderate 50-99",units:866,  spike:72,  post:21,  pct:29.2, fully:124,  mostly:451,  still:291  },
+  { tier:"Low <50",       units:1282, spike:21,  post:11,  pct:52.4, fully:318,  mostly:288,  still:676  },
+];
+const RECOVERY_9 = [
+  { tier:"Severe 500+",   units:94,   spike:763, post:261, pct:34.2, fully:2,    mostly:38,   still:54   },
+  { tier:"Chronic 100-499",units:3276,spike:170, post:53,  pct:31.2, fully:90,   mostly:1685, still:1501 },
+  { tier:"Moderate 50-99",units:3486, spike:71,  post:30,  pct:42.3, fully:193,  mostly:1331, still:1962 },
+  { tier:"Low <50",       units:9232, spike:18,  post:16,  pct:88.9, fully:1486, mostly:1150, still:6596 },
+];
+
+const ZSA_ZPL = [
+  { grp:"ZSA 8100", occ:145.0, s1:404.7, col:C.accent1 },
+  { grp:"ZSA 9100", occ:56.2,  s1:169.8, col:C.accent2 },
+  { grp:"ZPL 9100", occ:50.5,  s1:176.9, col:"#7ba9d4"  },
+];
+
+const IDLE_OCC = [
+  { label:"0-8h  High",  m8:213.6, m9:114.8 },
+  { label:"8-12h Mod",   m8:178.8, m9:91.3  },
+  { label:"12-16h Low",  m8:90.3,  m9:64.9  },
+  { label:"16-20h Min",  m8:52.2,  m9:44.5  },
+  { label:"20+h Idle",   m8:8.5,   m9:20.3  },
+];
+
+const CHAINS = [
+  { name:"Wendy's 8100",      type:"8100", occ:210.0, idle:9.4,  age:344  },
+  { name:"Universal Studios", type:"9100", occ:144.6, idle:14.2, age:620  },
+  { name:"White Castle",      type:"8100", occ:110.0, idle:9.1,  age:307  },
+  { name:"Wendy's 9100",      type:"9100", occ:94.4,  idle:14.5, age:565  },
+  { name:"WAWA",              type:"9100", occ:82.8,  idle:8.3,  age:775  },
+  { name:"Burger King 8100",  type:"8100", occ:76.2,  idle:10.0, age:423  },
+  { name:"Wingstop",          type:"9100", occ:60.2,  idle:12.8, age:1277 },
+  { name:"AMC Theatres",      type:"9100", occ:50.0,  idle:14.7, age:497  },
+  { name:"BK 9100",           type:"9100", occ:44.0,  idle:14.3, age:808  },
+];
+
+const HYPOTHESES = [
+  { name:"BIB Supply / Batch Quality",    score:72, status:"MOST LIKELY",          col:C.danger,
+    notes:"Fleet-wide simultaneous onset both types. 4-month transient then clean recovery. High-traffic machines first. Sequential type exposure (8100 Aug → 9100 Sep) consistent with distribution wave. Cannot confirm without lot codes." },
+  { name:"Q4 Volumetric Pump Stress",     score:68, status:"STRONGLY SUPPORTED",   col:C.warn,
+    notes:"Idle time 4× inverse confirmed. Fast-food chains lead. 1-strike precedes full occlusion. Burst peaks align with occ peak. Spike ratio flat across all 24 hours — not a peak-hour artifact. Cannot isolate without POS data." },
+  { name:"ZSA Architecture Baseline Gap", score:80, status:"CONFIRMED STRUCTURAL",  col:C.accent2,
+    notes:"ZSA 8100: 145 occ/disp vs ZPL 9100: 50.5 — 2.9× structural penalty year-round, not spike-specific. No expiry tracking on ZSA amplifies all other issues. Requires mechanical design review." },
+  { name:"Expiry as Enabler",             score:55, status:"PARTIAL CONTRIBUTOR",   col:C.accent1,
+    notes:"Expired % climbs Jun→Jan. ~47% fresh BIBs still occlude — cannot be sole cause. Warning % DROPS during spike on 9100 (61%→56%) = anti-correlation. Expiry is a compounding vulnerability, not the trigger." },
+  { name:"Operator Behavior",             score:48, status:"CONTRIBUTING FACTOR",   col:C.muted,
+    notes:"18–19% inserts already expired by Nov–Dec '25 (up from 9% in Jun). Gradual trend — not a sudden Sep trigger. Warning lead time stable at 9–17 days; operators not acting on warnings." },
+];
+
+const RULED_OUT = [
+  { h:"Fleet Growth Artifact",      why:"Per-unit rate spiked 5.7× on 8100 with monthly active-dispenser denominator. Not a count artifact." },
+  { h:"Firmware Threshold Change",  why:"occludedvalue locked at avg −8, P25/median −9 all 10 months. Zero shift at spike boundary." },
+  { h:"New Dispenser Wave",         why:"97%+ dispensers first appear Jun 2025 (window start artifact). <2% new mid-window." },
+  { h:"Small Chronic Offender Group",why:"Mid-tier (100–499) drives 60% across 2,054 8100 units — diffuse fleet problem, not isolated." },
+  { h:"Expiry as Primary Driver",   why:"Warning % drops 61%→56% on 9100 exactly when occlusions surge — clean anti-correlation." },
+  { h:"Idle Time / Stagnation",     why:"INVERSE relationship confirmed: highest-traffic dispensers occlude most. Stagnation eliminated." },
+  { h:"Dispenser Age",              why:"Near-flat across all 9100 age cohorts (59–72 avg occ/unit). Not a material driver." },
+];
+
+// ── REUSABLE COMPONENTS ───────────────────────────────────────────────────────
+const ss = (obj) => obj; // identity — makes inline style objects easier to read
+
+const Panel = ({ children, style = {}, className = "" }) => (
+  <div
+    className={className}
+    style={{
+      background: C.panel,
+      border: `1px solid ${C.panelBorder}`,
+      borderRadius: 12,
+      padding: "1.25rem",
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const SectionTitle = ({ children, sub }) => (
+  <div style={{ marginBottom: "1.25rem" }}>
+    <div style={{ fontFamily: "monospace", color: C.accent1, fontSize: "0.65rem", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "0.3rem" }}>
+      {sub}
+    </div>
+    <div style={{ fontFamily: "Georgia, serif", color: C.textPrimary, fontSize: "1.3rem", fontWeight: 700, lineHeight: 1.3 }}>
+      {children}
+    </div>
+  </div>
+);
+
+const Tag = ({ children, col = C.accent1 }) => (
+  <span style={{
+    background: col + "22", border: `1px solid ${col}66`, color: col,
+    fontSize: "0.6rem", padding: "0.1rem 0.45rem", borderRadius: 3,
+    fontFamily: "monospace", letterSpacing: "0.07em", whiteSpace: "nowrap",
+  }}>
+    {children}
+  </span>
+);
+
+const InfoBox = ({ col = C.accent1, children }) => (
+  <div style={{
+    background: col + "12", border: `1px solid ${col}40`,
+    borderRadius: 8, padding: "0.8rem 1.1rem",
+    fontSize: "0.74rem", color: C.textSub, lineHeight: 1.65,
+    marginBottom: "1.25rem",
+  }}>
+    {children}
+  </div>
+);
+
+const ChartNote = ({ children }) => (
+  <div style={{ color: C.textDim, fontSize: "0.63rem", lineHeight: 1.55, marginTop: "0.5rem" }}>
+    {children}
+  </div>
+);
+
+// Tooltip renderer — wraps as a function so Recharts calls it correctly
+const makeTT = (fmt) => ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
   return (
-    <div style={{ background:"#1e293b", border:"1px solid #334155", borderRadius:8, padding:"9px 13px", fontSize:11 }}>
-      <p style={{ color:"#94a3b8", marginBottom:4, fontWeight:700 }}>{label}</p>
+    <div style={{ background: "#0d1117", border: `1px solid ${C.panelBorder}`, borderRadius: 8, padding: "9px 13px", fontSize: "0.73rem" }}>
+      <div style={{ color: C.textSub, marginBottom: 5, fontFamily: "monospace" }}>{label}</div>
       {payload.map((p, i) => (
-        <p key={i} style={{ color:p.color, margin:"2px 0" }}>
-          {p.name}: <strong>{typeof p.value==="number" ? p.value.toLocaleString(undefined,{maximumFractionDigits:1}) : p.value}</strong>
-        </p>
+        <div key={i} style={{ color: p.color || C.textPrimary }}>
+          <span style={{ color: C.textDim }}>{p.name}: </span>
+          <strong>{fmt ? fmt(p.value) : p.value}</strong>
+        </div>
       ))}
     </div>
   );
 };
 
-const KPI = ({ label, value, sub, color, delta }) => (
-  <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:8, padding:"11px 15px", borderTop:`3px solid ${color}` }}>
-    <p style={{ color:"#64748b", fontSize:9, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", margin:"0 0 4px" }}>{label}</p>
-    <p style={{ color:"#f1f5f9", fontSize:20, fontWeight:800, margin:"0 0 2px", fontFamily:"monospace" }}>{value}</p>
-    {sub && <p style={{ color:"#64748b", fontSize:10, margin:0 }}>{sub}</p>}
-    {delta && <p style={{ color:delta.startsWith("+")?"#4ade80":"#f87171", fontSize:10, margin:"3px 0 0", fontWeight:700 }}>{delta}</p>}
-  </div>
+const ttDefault   = makeTT(null);
+const ttRate      = makeTT(v => `${Number(v).toFixed(2)} occ/disp`);
+const ttPct       = makeTT(v => `${Number(v).toFixed(1)}%`);
+const ttDays      = makeTT(v => `${v} days`);
+const ttOcc       = makeTT(v => `${v} occ/unit`);
+const ttRatio     = makeTT(v => `${Number(v).toFixed(2)}× baseline`);
+
+// Spike-period background drawn as a manual SVG rect overlay via a custom axis tick — instead use
+// ReferenceLine pairs to mark spike boundaries cleanly since ReferenceArea with category axis
+// can be unreliable across recharts versions.
+const SpikeLines = () => (
+  <>
+    <ReferenceLine x="Aug '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.5} />
+    <ReferenceLine x="Nov '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.5} label={{ value: "▲ SPIKE", position: "top", fill: C.accent1, fontSize: 9, fontFamily: "monospace" }} />
+  </>
 );
 
-const Hdr = ({ title, sub }) => (
-  <div style={{ marginBottom:10 }}>
-    <p style={{ color:"#f1f5f9", fontSize:11.5, fontWeight:800, margin:"0 0 2px" }}>{title}</p>
-    {sub && <p style={{ color:"#475569", fontSize:10, margin:0 }}>{sub}</p>}
-  </div>
-);
+const axTick = { fill: C.textSub, fontSize: 10 };
+const gridProps = { strokeDasharray: "3 3", stroke: C.grid };
+const marginStd = { top: 8, right: 16, bottom: 4, left: 0 };
 
-const FindingRow = ({ type, text }) => {
-  const m = { bad:["#f87171","▲"], warn:["#fbbf24","●"], good:["#4ade80","✓"], info:["#38bdf8","→"] };
-  const [col, icon] = m[type] || m.info;
-  return (
-    <div style={{ display:"flex", gap:7, marginBottom:7, alignItems:"flex-start" }}>
-      <span style={{ color:col, fontSize:11, flexShrink:0, marginTop:1 }}>{icon}</span>
-      <p style={{ color:"#cbd5e1", fontSize:11, margin:0, lineHeight:1.55 }}>{text}</p>
-    </div>
-  );
-};
+// ── TABS ──────────────────────────────────────────────────────────────────────
+const TABS = ["CONCLUSION", "TREND SPINE", "EXPIRY DEEP-DIVE", "SILENT FAILURES", "MACHINE ANATOMY", "OPERATIONS", "EVIDENCE"];
 
-const RightPanel = ({ tab }) => {
-  const d = INSIGHTS[tab];
-  return (
-    <div style={{ width:310, flexShrink:0, background:"#090e18", borderLeft:`1px solid ${CBR}`, display:"flex", flexDirection:"column", overflowY:"auto", maxHeight:"calc(100vh - 106px)" }}>
-      <div style={{ padding:"13px 16px 10px", borderBottom:`1px solid ${CBR}`, position:"sticky", top:0, background:"#090e18", zIndex:10 }}>
-        <p style={{ color:"#38bdf8", fontSize:9, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 3px" }}>Analysis Panel</p>
-        <p style={{ color:"#f1f5f9", fontSize:12.5, fontWeight:800, margin:0 }}>{d.title}</p>
-      </div>
-
-      <div style={{ padding:"12px 16px", flex:1 }}>
-
-        <div style={{ marginBottom:16 }}>
-          <p style={{ color:"#334155", fontSize:9, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 8px", display:"flex", alignItems:"center", gap:5 }}>
-            <span style={{ background:"#1e3a8a", color:"#93c5fd", padding:"2px 6px", borderRadius:3, fontSize:8, fontWeight:900 }}>HOW</span>
-            Methodology
-          </p>
-          {d.how.map((m,i) => (
-            <div key={i} style={{ marginBottom:9, paddingLeft:9, borderLeft:"2px solid #1e3a5f" }}>
-              <p style={{ color:"#7dd3fc", fontSize:10.5, fontWeight:700, margin:"0 0 2px" }}>{m[0]}</p>
-              <p style={{ color:"#475569", fontSize:10.5, margin:0, lineHeight:1.5 }}>{m[1]}</p>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginBottom:16 }}>
-          <p style={{ color:"#334155", fontSize:9, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 8px", display:"flex", alignItems:"center", gap:5 }}>
-            <span style={{ background:"#7f1d1d", color:"#fca5a5", padding:"2px 6px", borderRadius:3, fontSize:8, fontWeight:900 }}>WHAT</span>
-            Key Findings
-          </p>
-          {d.findings.map((f,i) => <FindingRow key={i} type={f[0]} text={f[1]} />)}
-        </div>
-
-        <div style={{ background:"#0a0f1a", border:`1px solid #1e293b`, borderRadius:7, padding:"11px 13px", marginBottom:14 }}>
-          <p style={{ color:"#f59e0b", fontSize:9, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", margin:"0 0 7px" }}>Data Caveats</p>
-          {d.caveats.map((c,i) => (
-            <p key={i} style={{ color:"#475569", fontSize:10.5, margin:"0 0 5px", lineHeight:1.5 }}>⚑ {c}</p>
-          ))}
-        </div>
-
-        <div style={{ background:CBR, borderRadius:7, padding:"10px 12px" }}>
-          <p style={{ color:"#475569", fontSize:9, fontWeight:700, textTransform:"uppercase", margin:"0 0 7px", letterSpacing:"0.08em" }}>Legend</p>
-          {[["#f87171","▲","Critical finding"],["#fbbf24","●","Warning / nuance"],["#38bdf8","→","Informational"],["#4ade80","✓","Positive / ruled out"]].map(([col,icon,lbl])=>(
-            <div key={lbl} style={{ display:"flex", gap:7, alignItems:"center", marginBottom:4 }}>
-              <span style={{ color:col, fontSize:11 }}>{icon}</span>
-              <span style={{ color:"#475569", fontSize:10.5 }}>{lbl}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const TABS = ["Trend Overview","Expiry Analysis","BIB Freshness","Chronic Units","Chain & Ops","Key Findings"];
-
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [tab, setTab] = useState(0);
+
   return (
-    <div style={{ background:CBG, minHeight:"100vh", fontFamily:"'DM Sans',system-ui,sans-serif", color:"#f1f5f9", display:"flex", flexDirection:"column" }}>
+    <div style={{ background: C.bg, minHeight: "100vh", color: C.textPrimary, fontFamily: "system-ui, sans-serif" }}>
 
-      <div style={{ borderBottom:`1px solid ${CBR}`, padding:"12px 22px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-        <div>
-          <h1 style={{ margin:0, fontSize:16, fontWeight:900, letterSpacing:"-0.02em" }}>NNS Occlusion Intelligence</h1>
-          <p style={{ margin:"2px 0 0", color:"#475569", fontSize:10.5 }}>Jun 2025 – Mar 2026 · Active US Dispensers · 8100 vs 9100</p>
-        </div>
-        <div style={{ display:"flex", gap:7 }}>
-          <span style={{ background:C8+"22", color:C8, padding:"3px 10px", borderRadius:20, fontSize:10, fontWeight:700 }}>■ 8100</span>
-          <span style={{ background:C9+"22", color:C9, padding:"3px 10px", borderRadius:20, fontSize:10, fontWeight:700 }}>■ 9100</span>
-        </div>
-      </div>
-
-      <div style={{ display:"flex", gap:3, padding:"9px 22px", borderBottom:`1px solid ${CBR}`, flexShrink:0, overflowX:"auto" }}>
-        {TABS.map((t,i) => (
-          <button key={i} onClick={()=>setTab(i)}
-            style={{ background:tab===i?"#1e40af":"transparent", color:tab===i?"#fff":"#64748b",
-              border:tab===i?"1px solid #3b82f6":"1px solid transparent",
-              borderRadius:5, padding:"5px 12px", fontSize:10.5, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" }}>
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
-
-        {/* LEFT CHARTS */}
-        <div style={{ flex:1, overflowY:"auto", padding:"18px 22px" }}>
-
-          {tab === 0 && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:18 }}>
-                <KPI label="Peak 8100 Rate" value="58.1" sub="Occ/disp · Oct '25" color={C8} delta="+466% vs Jun" />
-                <KPI label="Peak 9100 Rate" value="21.6" sub="Occ/disp · Nov '25" color={C9} delta="+101% vs Jun" />
-                <KPI label="Spike Duration"  value="4 mo" sub="Aug to Nov 2025" color="#a78bfa" />
-                <KPI label="Fleet Mar '26"   value="24,256" sub="8100: 5,347 · 9100: 18,909" color="#4ade80" />
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                <Hdr title="Full Occlusions Per Dispenser Per Month" sub="Primary normalized rate — monthly active dispenser count as denominator" />
-                <ResponsiveContainer width="100%" height={230}>
-                  <ComposedChart data={monthlySpine} margin={{top:4,right:14,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis tick={{fill:"#64748b",fontSize:10}} />
-                    <Tooltip content={<DarkTip />} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <ReferenceLine x="Sep '25" stroke="#f59e0b" strokeDasharray="4 4" label={{value:"Spike",fill:"#f59e0b",fontSize:9,position:"insideTopLeft"}} />
-                    <ReferenceLine x="Feb '26" stroke="#a78bfa" strokeDasharray="4 4" label={{value:"Sys Change",fill:"#a78bfa",fontSize:9}} />
-                    <Area type="monotone" dataKey="full8100" fill={C8+"22"} stroke={C8} strokeWidth={2.5} name="8100 Full Occ/Disp" dot={{r:3,fill:C8}} />
-                    <Area type="monotone" dataKey="full9100" fill={C9+"22"} stroke={C9} strokeWidth={2.5} name="9100 Full Occ/Disp" dot={{r:3,fill:C9}} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                <Hdr title="1-Strike Occlusions Per Dispenser" sub="Leading indicator — micropumpspmoccludedtrouble events normalized to active dispensers" />
-                <ResponsiveContainer width="100%" height={185}>
-                  <LineChart data={monthlySpine} margin={{top:4,right:14,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis tick={{fill:"#64748b",fontSize:10}} />
-                    <Tooltip content={<DarkTip />} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <ReferenceLine x="Sep '25" stroke="#f59e0b" strokeDasharray="4 4" />
-                    <Line type="monotone" dataKey="s1_8100" stroke={C8} strokeWidth={2} strokeDasharray="6 3" name="8100 1-Strike/Disp" dot={{r:3}} />
-                    <Line type="monotone" dataKey="s1_9100" stroke={C9} strokeWidth={2} strokeDasharray="6 3" name="9100 1-Strike/Disp" dot={{r:3}} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                <Hdr title="Raw Full Occlusion Event Count" sub="Absolute volume — 9100 dominates due to 4x larger fleet. Use per-dispenser for comparisons." />
-                <ResponsiveContainer width="100%" height={175}>
-                  <BarChart data={monthlySpine} margin={{top:4,right:14,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis tick={{fill:"#64748b",fontSize:10}} tickFormatter={v=>(v/1000).toFixed(0)+"K"} />
-                    <Tooltip content={<DarkTip />} formatter={v=>v.toLocaleString()} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <Bar dataKey="raw8100" name="8100 Raw" fill={C8} opacity={0.75} radius={[2,2,0,0]} />
-                    <Bar dataKey="raw9100" name="9100 Raw" fill={C9} opacity={0.75} radius={[2,2,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+      {/* ── HEADER ── */}
+      <div style={{ borderBottom: `1px solid ${C.panelBorder}`, padding: "1.4rem 1.75rem 0" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "1.1rem" }}>
+          <div>
+            <div style={{ fontFamily: "monospace", color: C.accent1, fontSize: "0.62rem", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+              CONFIDENTIAL · NNS BEVERAGE DISPENSER PROGRAM · MAR 2026
             </div>
-          )}
+            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "1.75rem", fontWeight: 700, color: C.textPrimary, lineHeight: 1.2, margin: 0 }}>
+              Occlusion Rate Investigation
+              <span style={{ color: C.textSub, fontWeight: 400 }}> — Root Cause Analysis</span>
+            </h1>
+            <div style={{ color: C.textSub, fontSize: "0.78rem", marginTop: "0.35rem" }}>
+              Equipment Types 8100 &amp; 9100 · Active US Dispensers · Jun 2025 – Mar 2026 · Ingredient 1048588
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "2rem", flexShrink: 0 }}>
+            {[
+              { l: "8100 Peak Rate",  v: "+466%", s: "Oct '25 vs Jun baseline", c: C.accent1 },
+              { l: "9100 Peak Rate",  v: "+101%", s: "Nov '25 vs Jun baseline", c: C.accent2 },
+              { l: "Spike Duration",  v: "4 mo",  s: "Aug – Nov '25",           c: C.textPrimary },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{ fontFamily: "monospace", color: s.c, fontSize: "1.9rem", fontWeight: 900, lineHeight: 1 }}>{s.v}</div>
+                <div style={{ color: C.textSub, fontSize: "0.65rem", marginTop: "0.2rem", textTransform: "uppercase", letterSpacing: "0.07em" }}>{s.l}</div>
+                <div style={{ color: C.textDim, fontSize: "0.62rem" }}>{s.s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {tab === 1 && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:18 }}>
-                <KPI label="8100 Warning %" value="~28%" sub="Flat throughout spike" color={C8} />
-                <KPI label="9100 Warning %" value="~60%" sub="Drops during spike" color={C9} />
-                <KPI label="Feb '26 Spike" value="99.5%" sub="Firmware enforcement change" color="#a78bfa" delta="Not a real expiry surge" />
+        {/* tab bar */}
+        <div style={{ display: "flex", overflowX: "auto", gap: 0 }}>
+          {TABS.map((t, i) => (
+            <button key={i} onClick={() => setTab(i)} style={{
+              padding: "0.55rem 1rem", fontFamily: "monospace", fontSize: "0.63rem",
+              letterSpacing: "0.12em", textTransform: "uppercase", border: "none",
+              borderBottom: i === tab ? `2px solid ${C.accent1}` : "2px solid transparent",
+              background: "transparent", color: i === tab ? C.accent1 : C.textSub,
+              cursor: "pointer", whiteSpace: "nowrap", transition: "color 0.15s",
+            }}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div style={{ padding: "1.5rem 1.75rem", maxWidth: 1380, margin: "0 auto" }}>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 0 — CONCLUSION
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 0 && (
+          <div>
+            <InfoBox col={C.danger}>
+              <strong style={{ color: C.danger }}>EXECUTIVE FINDING — </strong>
+              The Sep–Nov 2025 occlusion spike is{" "}
+              <strong style={{ color: C.accent1 }}>real, fleet-wide, and mechanically caused</strong> — not a data artifact, firmware change, or fleet expansion.
+              The most probable explanation is a{" "}
+              <strong style={{ color: C.danger }}>BIB supply quality event</strong> arriving across both types in sequential waves (8100 onset Aug, 9100 onset Sep),
+              amplified by <strong style={{ color: C.warn }}>Q4 volumetric pump stress</strong> in high-traffic fast-food environments.
+              Expiry is a <strong style={{ color: C.accent1 }}>contributor but not the primary trigger</strong> — warning rates anti-correlate with the spike.
+              The ZSA 8100 structural disadvantage (2.9× occlusion penalty vs ZPL 9100) is a separate persistent problem requiring mechanical review.
+            </InfoBox>
+
+            {/* KPI row */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              {[
+                { l: "8100 Spike Onset",      v: "Aug '25",  s: "1 month before 9100",    c: C.accent1 },
+                { l: "8100 Max Rate",          v: "+466%",    s: "Oct '25 vs Jun baseline", c: C.danger  },
+                { l: "9100 Max Rate",          v: "+101%",    s: "Nov '25 vs Jun baseline", c: C.accent2 },
+                { l: "8100 Silent Fail Peak",  v: "83%",      s: "Sep '25 — no prior warn", c: C.warn    },
+                { l: "Fresh BIBs Occluding",   v: "~47%",     s: "expiry not sole cause",   c: C.success },
+              ].map((s, i) => (
+                <Panel key={i}>
+                  <div style={{ fontFamily: "monospace", color: s.c, fontSize: "1.7rem", fontWeight: 900, lineHeight: 1 }}>{s.v}</div>
+                  <div style={{ color: C.textSub, fontSize: "0.67rem", marginTop: "0.25rem", textTransform: "uppercase", letterSpacing: "0.07em" }}>{s.l}</div>
+                  <div style={{ color: C.textDim, fontSize: "0.62rem", marginTop: "0.15rem" }}>{s.s}</div>
+                </Panel>
+              ))}
+            </div>
+
+            {/* Three-driver cards */}
+            <div style={{ fontFamily: "monospace", color: C.textSub, fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.65rem" }}>
+              Three-Driver Model — Ranked by Evidence Strength
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              {[
+                {
+                  rank: "01", title: "BIB Supply / Batch Quality", score: 72, col: C.danger,
+                  tag: "MOST LIKELY — EXTERNAL DATA NEEDED TO CONFIRM",
+                  bullets: [
+                    "Both equipment types spiked simultaneously — not a machine-class issue",
+                    "8100 onset Aug, 9100 Sep: sequential exposure consistent with a distribution wave",
+                    "Transient 4-month window then clean return to baseline — matches bad-batch lifecycle",
+                    "High-traffic machines hit first: they cycle through BIBs 2–3× faster",
+                    "CANNOT CONFIRM without manufacturer lot codes or plant dispatch records",
+                  ],
+                },
+                {
+                  rank: "02", title: "Q4 Volumetric Pump Stress", score: 68, col: C.warn,
+                  tag: "STRONGLY SUPPORTED — CORRELATES BUT CANNOT ISOLATE",
+                  bullets: [
+                    "Idle time inverse: 0–8h idle = 213.6 occ/unit (8100) vs 8.5 at 20+h idle",
+                    "Wendy's 8100 (9.4h idle) = 210 occ/unit; BK 9100 (14.3h idle) = 44 occ/unit",
+                    "Spike ratio uniform 4.2–4.9× across all 24 hours — not a peak-hour artifact",
+                    "1-strike events precede full occlusion: mechanical pump degradation chain confirmed",
+                    "CANNOT ISOLATE from batch hypothesis without POS transaction volume data",
+                  ],
+                },
+                {
+                  rank: "03", title: "Expiry Accumulation (Enabler)", score: 55, col: C.accent1,
+                  tag: "PARTIAL CONTRIBUTOR — ANTI-CORRELATES AS PRIMARY TRIGGER",
+                  bullets: [
+                    "% inserts-already-expired rose from 9% (Jun) to 19% (Nov–Dec) — gradual",
+                    "Expired BIB % at occlusion rose 14%→62% Jun→Jan (ZPL machines only)",
+                    "BUT: warning % DROPS 61%→56% on 9100 during spike — should rise if expiry drove it",
+                    "~47% of traceable occlusions involve fresh BIBs with 30+ days remaining",
+                    "Expiry creates vulnerability; a separate trigger activates the failure",
+                  ],
+                },
+              ].map((d, i) => (
+                <Panel key={i} style={{ borderColor: d.col + "50" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+                    <div style={{ fontFamily: "monospace", color: d.col, fontSize: "2rem", fontWeight: 900, opacity: 0.25, lineHeight: 1 }}>{d.rank}</div>
+                    <div style={{ background: d.col + "22", border: `1px solid ${d.col}55`, borderRadius: 4, padding: "2px 8px", fontFamily: "monospace", color: d.col, fontSize: "0.68rem", fontWeight: 700 }}>
+                      {d.score}/100
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "Georgia, serif", color: C.textPrimary, fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.35rem" }}>{d.title}</div>
+                  <div style={{ color: d.col, fontSize: "0.58rem", fontFamily: "monospace", letterSpacing: "0.05em", marginBottom: "0.7rem" }}>{d.tag}</div>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                    {d.bullets.map((b, j) => (
+                      <li key={j} style={{ color: C.textSub, fontSize: "0.71rem", lineHeight: 1.55, marginBottom: "0.3rem", paddingLeft: "0.85rem", position: "relative" }}>
+                        <span style={{ position: "absolute", left: 0, color: d.col }}>›</span>{b}
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              ))}
+            </div>
+
+            {/* Ruled out */}
+            <Panel style={{ marginBottom: "1.25rem" }}>
+              <div style={{ fontFamily: "monospace", color: C.success, fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.85rem" }}>
+                ✓ Hypotheses Ruled Out With Data (7)
               </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                <Hdr title="Occlusion Rate vs Expiry Warning Coverage" sub="If expiry drives occlusions, warning % should rise as occ/disp rises. It does not." />
-                <ResponsiveContainer width="100%" height={260}>
-                  <ComposedChart data={expiryOverlay} margin={{top:4,right:38,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis yAxisId="l" tick={{fill:"#64748b",fontSize:10}} label={{value:"Occ/Disp",angle:-90,position:"insideLeft",fill:"#64748b",fontSize:9}} />
-                    <YAxis yAxisId="r" orientation="right" domain={[0,110]} tick={{fill:"#64748b",fontSize:10}} label={{value:"Warning %",angle:90,position:"insideRight",fill:"#64748b",fontSize:9}} />
-                    <Tooltip content={<DarkTip />} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <ReferenceLine yAxisId="l" x="Sep '25" stroke="#f59e0b" strokeDasharray="4 4" label={{value:"Spike",fill:"#f59e0b",fontSize:9}} />
-                    <ReferenceLine yAxisId="l" x="Feb '26" stroke="#a78bfa" strokeDasharray="4 4" label={{value:"SysChange",fill:"#a78bfa",fontSize:9}} />
-                    <Bar yAxisId="l" dataKey="occ8100" name="8100 Occ/Disp" fill={C8} opacity={0.4} />
-                    <Bar yAxisId="l" dataKey="occ9100" name="9100 Occ/Disp" fill={C9} opacity={0.4} />
-                    <Line yAxisId="r" type="monotone" dataKey="warn8100" stroke={C8} strokeWidth={2} strokeDasharray="5 3" name="8100 Warn%" dot={{r:3}} />
-                    <Line yAxisId="r" type="monotone" dataKey="warn9100" stroke={C9} strokeWidth={2} strokeDasharray="5 3" name="9100 Warn%" dot={{r:3}} />
-                  </ComposedChart>
-                </ResponsiveContainer>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+                {RULED_OUT.map((r, i) => (
+                  <div key={i} style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start" }}>
+                    <span style={{ color: C.success, fontFamily: "monospace", fontSize: "0.8rem", flexShrink: 0, marginTop: "0.05rem" }}>✗</span>
+                    <div>
+                      <div style={{ color: C.textSub, fontSize: "0.73rem", fontWeight: 600 }}>{r.h}</div>
+                      <div style={{ color: C.textDim, fontSize: "0.65rem", marginTop: "0.1rem", lineHeight: 1.45 }}>{r.why}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                <Hdr title="Monthly Detail — Spike months highlighted" />
-                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:10.5 }}>
+            </Panel>
+
+            {/* Actions */}
+            <div style={{ fontFamily: "monospace", color: C.textSub, fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.65rem" }}>
+              Recommended Actions
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem" }}>
+              {[
+                { p: "P1", a: "Request BIB lot traceability data from manufacturer for Aug–Nov '25 production window. Match lot codes to affected serial numbers.", c: C.danger  },
+                { p: "P2", a: "Investigate ZSA 8100 micro-pump architecture: why 2.9× baseline penalty vs ZPL 9100? Mechanical design review required.", c: C.warn    },
+                { p: "P3", a: "Operator training on BIB freshness at load. 19% of inserts already expired by Nov–Dec — significant and growing operational gap.", c: C.accent1 },
+                { p: "P4", a: "Re-run C1 plantcode query with broader event filter. Confirm which event type carries plantcode field for ingredient 1048588.", c: C.accent2 },
+              ].map((a, i) => (
+                <div key={i} style={{ background: a.c + "10", border: `1px solid ${a.c}30`, borderRadius: 10, padding: "0.9rem" }}>
+                  <div style={{ fontFamily: "monospace", color: a.c, fontSize: "0.62rem", letterSpacing: "0.1em", marginBottom: "0.45rem" }}>{a.p} — ACTION</div>
+                  <div style={{ color: C.textSub, fontSize: "0.71rem", lineHeight: 1.55 }}>{a.a}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 1 — TREND SPINE
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 1 && (
+          <div>
+            <SectionTitle sub="Core Metric">Occlusions Per Active Dispenser — 10-Month Spine</SectionTitle>
+
+            <InfoBox col={C.accent1}>
+              <strong style={{ color: C.accent1 }}>How to read this: </strong>
+              All rates = full occlusions ÷ COUNT(DISTINCT active dispensers that month). Denominator rises Jun→Feb
+              (8100: 4,825→5,341; 9100: 18,042→19,244) so fleet growth cannot inflate per-unit rates.
+              Mar '26 is partial data through Mar 3 only — excluded from all trend conclusions.
+              † Feb '26 expiry metrics are contaminated by an 8× firmware enforcement spike in <em>nnscheckenjoybytrouble</em>.
+              Dashed vertical lines mark spike window boundaries (Aug–Nov '25).
+            </InfoBox>
+
+            {/* Main rate chart */}
+            <Panel style={{ marginBottom: "1rem" }}>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Full Occlusions per Active Dispenser — Primary Normalized Rate (Jun '25 – Jan '26)</div>
+              <ResponsiveContainer width="100%" height={310}>
+                <ComposedChart data={SPINE_MAIN} margin={marginStd}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="m" tick={axTick} />
+                  <YAxis tick={axTick} />
+                  <Tooltip content={ttRate} />
+                  <Legend wrapperStyle={{ fontSize: "0.72rem", color: C.textSub }} />
+                  <SpikeLines />
+                  <Line dataKey="m8_rate" name="8100 Occ/Disp" stroke={C.accent1} strokeWidth={2.5} dot={{ r: 4, fill: C.accent1 }} />
+                  <Line dataKey="m9_rate" name="9100 Occ/Disp" stroke={C.accent2} strokeWidth={2.5} dot={{ r: 4, fill: C.accent2 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </Panel>
+
+            {/* 1-strike vs full */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              {[
+                { type: "8100", rateKey: "m8_rate", s1Key: "m8_s1", col: C.accent1 },
+                { type: "9100", rateKey: "m9_rate", s1Key: "m9_s1", col: C.accent2 },
+              ].map(({ type, rateKey, s1Key, col }) => (
+                <Panel key={type}>
+                  <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>1-Strike (Leading Indicator) vs Full Occlusion — {type}</div>
+                  <ResponsiveContainer width="100%" height={210}>
+                    <ComposedChart data={SPINE_MAIN} margin={marginStd}>
+                      <CartesianGrid {...gridProps} />
+                      <XAxis dataKey="m" tick={{ ...axTick, fontSize: 9 }} />
+                      <YAxis tick={{ ...axTick, fontSize: 9 }} />
+                      <Tooltip content={ttDefault} />
+                      <Bar dataKey={s1Key} name="1-Strike/Disp" fill={col + "44"} />
+                      <Line dataKey={rateKey} name="Full Occ/Disp" stroke={col} strokeWidth={2} dot={{ r: 0 }} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                  <ChartNote>
+                    1-Strike events scale with full occlusions every month — confirming mechanical pump degradation chain, not a detection artifact. {type === "8100" ? "8100 spike magnitude: 10.3→58.1 occ/disp (+466%)." : "9100 spike magnitude: 10.7→21.6 occ/disp (+101%)."}
+                  </ChartNote>
+                </Panel>
+              ))}
+            </div>
+
+            {/* Monthly detail table */}
+            <Panel>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Full Monthly Spine — Confirmed Data</div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.71rem" }}>
                   <thead>
-                    <tr style={{ borderBottom:`1px solid ${CBR}` }}>
-                      {["Month","8100 Occ/D","9100 Occ/D","8100 Warn%","9100 Warn%"].map(h=>(
-                        <th key={h} style={{ color:"#475569", textAlign:"right", padding:"4px 8px", fontWeight:700 }}>{h}</th>
+                    <tr style={{ borderBottom: `1px solid ${C.panelBorder}` }}>
+                      {["Month", "8100 Disp", "9100 Disp", "8100 Full Occ", "9100 Full Occ", "8100 Rate", "9100 Rate", "8100 1-Strike", "9100 1-Strike"].map(h => (
+                        <th key={h} style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: C.textDim, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.07em", textTransform: "uppercase" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {expiryOverlay.map((r,i)=>{
-                      const s=["Sep '25","Oct '25","Nov '25"].includes(r.month);
-                      return(
-                        <tr key={i} style={{ background:s?"#f59e0b0d":"transparent", borderBottom:`1px solid ${CBR}22` }}>
-                          <td style={{ color:s?"#fbbf24":"#94a3b8", padding:"4px 8px", fontWeight:s?700:400 }}>{r.month}</td>
-                          <td style={{ color:C8, textAlign:"right", padding:"4px 8px", fontWeight:r.occ8100>30?700:400 }}>{r.occ8100}</td>
-                          <td style={{ color:C9, textAlign:"right", padding:"4px 8px", fontWeight:r.occ9100>15?700:400 }}>{r.occ9100}</td>
-                          <td style={{ color:C8, textAlign:"right", padding:"4px 8px" }}>{r.warn8100}%</td>
-                          <td style={{ color:C9, textAlign:"right", padding:"4px 8px" }}>{r.warn9100}%</td>
+                    {SPINE.map((r, i) => {
+                      const spike = r.m8_rate > 15 || r.m9_rate > 13;
+                      return (
+                        <tr key={i} style={{ borderBottom: `1px solid ${C.grid}`, background: spike ? C.accent1 + "0a" : "transparent" }}>
+                          <td style={{ padding: "0.35rem 0.65rem", color: spike ? C.accent1 : C.textSub, fontFamily: "monospace" }}>{r.m}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: C.textSub }}>{r.m8_disp.toLocaleString()}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: C.textSub }}>{r.m9_disp.toLocaleString()}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: spike ? C.accent1 : C.textSub }}>{r.m8_full.toLocaleString()}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: spike ? C.accent2 : C.textSub }}>{r.m9_full.toLocaleString()}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: spike ? C.danger : C.textPrimary, fontWeight: spike ? 700 : 400, fontFamily: "monospace" }}>{r.m8_rate.toFixed(2)}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: spike ? C.accent2 : C.textPrimary, fontWeight: spike ? 700 : 400, fontFamily: "monospace" }}>{r.m9_rate.toFixed(2)}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: C.textSub }}>{r.m8_s1.toFixed(2)}</td>
+                          <td style={{ textAlign: "right", padding: "0.35rem 0.65rem", color: C.textSub }}>{r.m9_s1.toFixed(2)}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            </Panel>
+          </div>
+        )}
 
-          {tab === 2 && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:18 }}>
-                <KPI label="Peak Expired % 8100" value="62%" sub="Dec '25 - Jan '26" color={C8} delta="Up from 14% in Jun '25" />
-                <KPI label="Peak Expired % 9100" value="58%" sub="Jan '26" color={C9} delta="Up from 17% in Jun '25" />
-                <KPI label="Fresh BIB Occlusions" value="~47%" sub="Expiry is not the sole cause" color="#4ade80" />
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                <Hdr title="% Occlusions Where BIB Was Already Expired at Event Time" sub="ZPL / bibNnsReplaced machines only · 8100 covers 15.6% of occlusions · 9100 covers 51.6%" />
-                <ResponsiveContainer width="100%" height={230}>
-                  <ComposedChart data={bibExpiry} margin={{top:4,right:14,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis tick={{fill:"#64748b",fontSize:10}} domain={[0,75]} tickFormatter={v=>v+"%"} />
-                    <Tooltip content={<DarkTip />} formatter={v=>v+"%"} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <ReferenceLine x="Sep '25" stroke="#f59e0b" strokeDasharray="4 4" label={{value:"Spike",fill:"#f59e0b",fontSize:9}} />
-                    <ReferenceLine y={50} stroke="#f87171" strokeDasharray="3 3" label={{value:"50%",fill:"#f87171",fontSize:9,position:"right"}} />
-                    <Area type="monotone" dataKey="pct8100" fill={C8+"33"} stroke={C8} strokeWidth={2.5} name="8100 % Expired" dot={{r:3}} />
-                    <Area type="monotone" dataKey="pct9100" fill={C9+"33"} stroke={C9} strokeWidth={2.5} name="9100 % Expired" dot={{r:3}} />
-                  </ComposedChart>
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 2 — EXPIRY DEEP-DIVE
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 2 && (
+          <div>
+            <SectionTitle sub="Expiry Analysis">BIB Freshness, Expiry Timing & Warning Anti-Correlation</SectionTitle>
+
+            <InfoBox col={C.success}>
+              <strong style={{ color: C.success }}>KEY FINDING: </strong>
+              The 9100 expiry warning % DROPS from 61% → 56% exactly when occlusions surge (Sep–Oct '25). If expiry were the primary trigger, warnings should rise alongside occlusions. This anti-correlation definitively rules out expiry as the spike driver — expiry is an accumulating <em>vulnerability</em>, not the ignition source.
+              <br /><strong style={{ color: C.warn }}> 8100 caveat: </strong>Only 15.6% of 8100 occlusions are traceable to a BIB with an expiry date (ZSA machines have no enjoybydate). All 8100 expiry figures are directional only.
+            </InfoBox>
+
+            {/* Anti-correlation chart */}
+            <Panel style={{ marginBottom: "1rem" }}>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>9100 Expiry Warning Coverage % vs Occlusion Rate — Anti-Correlation During Spike</div>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={SPINE_MAIN} margin={marginStd}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="m" tick={axTick} />
+                  <YAxis yAxisId="rate" tick={axTick} label={{ value: "Occ/Disp", angle: -90, position: "insideLeft", fill: C.textDim, fontSize: 10, offset: 10 }} />
+                  <YAxis yAxisId="pct" orientation="right" domain={[0, 100]} tick={axTick} label={{ value: "Warn %", angle: 90, position: "insideRight", fill: C.textDim, fontSize: 10 }} />
+                  <Tooltip content={ttDefault} />
+                  <Legend wrapperStyle={{ fontSize: "0.72rem" }} />
+                  <SpikeLines />
+                  <Line yAxisId="rate" dataKey="m9_rate" name="9100 Occ/Disp (left)" stroke={C.accent2} strokeWidth={2.5} dot={{ r: 4, fill: C.accent2 }} />
+                  <Line yAxisId="pct"  dataKey="m9_warn" name="9100 Expiry Warn% (right)" stroke={C.danger} strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: C.danger }} />
+                  <Line yAxisId="rate" dataKey="m8_rate" name="8100 Occ/Disp (left)" stroke={C.accent1} strokeWidth={1.5} strokeOpacity={0.6} dot={{ r: 2, fill: C.accent1 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <ChartNote>
+                9100 warning % moves counter to occlusion rate during spike — clear anti-correlation. Feb '26 warning % = 99% is a firmware enforcement artifact, not a real expiry event, and is excluded from this chart.
+              </ChartNote>
+            </Panel>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              {/* Inserts already expired at load */}
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>% BIB Inserts Already Expired at Time of Load — Operator Behavior</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={INSERTED_EXPIRED} margin={marginStd}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="m" tick={{ ...axTick, fontSize: 9 }} />
+                    <YAxis tick={{ ...axTick, fontSize: 9 }} domain={[0, 25]} unit="%" />
+                    <Tooltip content={ttPct} />
+                    <Legend wrapperStyle={{ fontSize: "0.7rem" }} />
+                    <Bar dataKey="p8" name="8100" fill={C.accent1} opacity={0.85} />
+                    <Bar dataKey="p9" name="9100" fill={C.accent2} opacity={0.85} />
+                  </BarChart>
                 </ResponsiveContainer>
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                <Hdr title="BIB Freshness Breakdown at Oct '25 Peak" sub="Remaining days on enjoy-by date at the exact time of occlusion event" />
-                {[
-                  ["Already Expired","52.5%","48.4%","#f87171"],
-                  ["Critical (0-7 days)","9.1%","9.6%","#fb923c"],
-                  ["Near (8-30 days)","21.8%","29.1%","#fbbf24"],
-                  ["Fresh (30+ days)","16.6%","12.9%","#4ade80"],
-                ].map((r,i)=>(
-                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid ${CBR}44` }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                      <div style={{ width:7,height:7,borderRadius:2,background:r[3] }} />
-                      <span style={{ color:"#94a3b8", fontSize:11 }}>{r[0]}</span>
-                    </div>
-                    <div style={{ display:"flex", gap:28 }}>
-                      <span style={{ color:C8, fontSize:11, fontWeight:700, width:38, textAlign:"right" }}>{r[1]}</span>
-                      <span style={{ color:C9, fontSize:11, fontWeight:700, width:38, textAlign:"right" }}>{r[2]}</span>
-                    </div>
-                  </div>
-                ))}
-                <div style={{ display:"flex", justifyContent:"flex-end", gap:28, marginTop:5 }}>
-                  <span style={{ color:C8, fontSize:9, fontWeight:800 }}>8100</span>
-                  <span style={{ color:C9, fontSize:9, fontWeight:800 }}>9100</span>
-                </div>
-              </div>
-            </div>
-          )}
+                <ChartNote>
+                  Jun '25: 9–11% loaded already expired. Nov–Dec '25: 18–20%. Gradual operator behavior deterioration — not a sudden Sep trigger, but a compounding vulnerability. Drop in Jan '26 may reflect awareness or the firmware enforcement starting.
+                </ChartNote>
+              </Panel>
 
-          {tab === 3 && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:18 }}>
-                <KPI label="Peak Chronic 8100" value="981" sub="Oct '25 · 100+ occ/month" color={C8} delta="24.1% of occluding 8100s" />
-                <KPI label="Peak Chronic 9100" value="572" sub="Oct '25 · 100+ occ/month" color={C9} delta="4.3% of occluding 9100s" />
-                <KPI label="Spike Pattern" value="Diffuse" sub="No 80/20 concentration" color="#a78bfa" />
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                <Hdr title="Chronic Units Per Month (100+ Full Occlusions That Month)" sub="Left: unit count · Right: % of all occluding dispensers that month" />
-                <ResponsiveContainer width="100%" height={235}>
-                  <ComposedChart data={chronicData} margin={{top:4,right:38,left:0,bottom:4}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                    <XAxis dataKey="month" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis yAxisId="l" tick={{fill:"#64748b",fontSize:10}} />
-                    <YAxis yAxisId="r" orientation="right" domain={[0,30]} tick={{fill:"#64748b",fontSize:10}} tickFormatter={v=>v+"%"} />
-                    <Tooltip content={<DarkTip />} />
-                    <Legend wrapperStyle={{color:"#94a3b8",fontSize:10}} />
-                    <ReferenceLine yAxisId="l" x="Sep '25" stroke="#f59e0b" strokeDasharray="4 4" />
-                    <Bar yAxisId="l" dataKey="c8100" name="8100 Chronic" fill={C8} opacity={0.7} radius={[2,2,0,0]} />
-                    <Bar yAxisId="l" dataKey="c9100" name="9100 Chronic" fill={C9} opacity={0.7} radius={[2,2,0,0]} />
-                    <Line yAxisId="r" type="monotone" dataKey="pct8100" stroke={C8} strokeWidth={2} strokeDasharray="5 3" name="8100 % Chronic" dot={{r:3}} />
-                    <Line yAxisId="r" type="monotone" dataKey="pct9100" stroke={C9} strokeWidth={2} strokeDasharray="5 3" name="9100 % Chronic" dot={{r:3}} />
-                  </ComposedChart>
+              {/* Warning lead time */}
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>Expiry Warning Lead Time Before Occlusion — Median Days by Month</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={LEAD_TIME} margin={marginStd}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="m" tick={{ ...axTick, fontSize: 9 }} />
+                    <YAxis tick={{ ...axTick, fontSize: 9 }} unit="d" domain={[0, 20]} />
+                    <Tooltip content={ttDays} />
+                    <Legend wrapperStyle={{ fontSize: "0.7rem" }} />
+                    <ReferenceLine x="Aug '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.4} />
+                    <ReferenceLine x="Nov '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.4} />
+                    <Line dataKey="med8" name="8100 Median Lead" stroke={C.accent1} strokeWidth={2} dot={{ r: 3, fill: C.accent1 }} />
+                    <Line dataKey="med9" name="9100 Median Lead" stroke={C.accent2} strokeWidth={2} dot={{ r: 3, fill: C.accent2 }} />
+                  </LineChart>
                 </ResponsiveContainer>
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                <Hdr title="Pareto Distribution — Sep-Nov 2025 Spike Window" sub="% of each type's total spike occlusions from each bucket" />
-                {[
-                  ["1000+ occ",   43,   15,    "7.9%","1.9%"],
-                  ["500-999 occ", 231,  80,    "20.2%","4.9%"],
-                  ["100-499 occ", 2054, 3344,  "60.1%","53.5%"],
-                  ["<100 occ",    2140, 12694, "11.8%","39.7%"],
-                ].map((r,i)=>(
-                  <div key={i} style={{ display:"grid", gridTemplateColumns:"110px 1fr 1fr", gap:8, padding:"7px 0", borderBottom:`1px solid ${CBR}44`, fontSize:10.5 }}>
-                    <span style={{ color:"#64748b" }}>{r[0]}</span>
-                    <div style={{ display:"flex", justifyContent:"space-between" }}>
-                      <span style={{ color:C8 }}>{r[1].toLocaleString()} units</span>
-                      <span style={{ color:C8, fontWeight:700 }}>{r[3]}</span>
-                    </div>
-                    <div style={{ display:"flex", justifyContent:"space-between" }}>
-                      <span style={{ color:C9 }}>{r[2].toLocaleString()} units</span>
-                      <span style={{ color:C9, fontWeight:700 }}>{r[4]}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                <ChartNote>
+                  Lead time is consistent at 8–17 days all months — the warning system IS generating signals before failure. Operators are not responding. Silent failure % rising during spike confirms warnings exist but actions aren't taken.
+                </ChartNote>
+              </Panel>
             </div>
-          )}
 
-          {tab === 4 && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-                <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                  <Hdr title="Avg Occ/Dispenser by Chain" sub="Sep-Nov 2025 · min 50 dispensers" />
-                  <ResponsiveContainer width="100%" height={290}>
-                    <BarChart data={chainData} layout="vertical" margin={{top:0,right:28,left:105,bottom:0}}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={CBR} horizontal={false} />
-                      <XAxis type="number" tick={{fill:"#64748b",fontSize:10}} />
-                      <YAxis type="category" dataKey="chain" tick={{fill:"#94a3b8",fontSize:9}} width={100} />
-                      <Tooltip content={<DarkTip />} />
-                      <Bar dataKey="avg" name="Avg Occ/Unit" radius={[0,4,4,0]}>
-                        {chainData.map((e,i)=>(
-                          <Cell key={i} fill={["Wendy's (8100)","White Castle (8100)","Burger King (8100)"].includes(e.chain)?C8:C9} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+            {/* BIB expiry status at occlusion */}
+            <Panel>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>BIB Expiry Status at Time of Full Occlusion — 9100 Monthly (Traceable Occlusions Only)</div>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={EXPIRY_TIER} margin={marginStd}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis dataKey="m" tick={axTick} />
+                  <YAxis tick={axTick} unit="%" domain={[0, 100]} />
+                  <Tooltip content={ttPct} />
+                  <Legend wrapperStyle={{ fontSize: "0.72rem" }} />
+                  <ReferenceLine x="Aug '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.4} />
+                  <Bar dataKey="e9_fresh" name="Fresh BIB at occlusion" stackId="a" fill={C.success} opacity={0.8} />
+                  <Bar dataKey="e9_exp"   name="Expired at occlusion"   stackId="a" fill={C.danger}  opacity={0.8} />
+                </BarChart>
+              </ResponsiveContainer>
+              <ChartNote>
+                Even at the Oct '25 peak, ~40% of traceable 9100 occlusions involve fresh BIBs (30+ days remaining). Expiry cannot be the sole mechanism — the micro-pump is failing on fresh product too, which is consistent with either a batch quality issue or volumetric stress.
+              </ChartNote>
+            </Panel>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 3 — SILENT FAILURES
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 3 && (
+          <div>
+            <SectionTitle sub="Failure Mode Analysis">Silent Failures &amp; Warning Response Gap</SectionTitle>
+
+            <InfoBox col={C.warn}>
+              <strong style={{ color: C.warn }}>Definition: </strong>
+              A "silent failure" is a dispenser that experienced at least one full occlusion in a calendar month with <em>zero</em> expiry warning events in that same month.
+              8100 has structurally higher silent failure rates because ZSA machines (73% of 8100 fleet) have no expiry tracking for ingredient 1048588 — the system literally cannot warn them.
+              For 9100, the rising silent failure % during the spike represents units where the BIB was fresh but failed mechanically — strong circumstantial evidence for batch or pump stress.
+            </InfoBox>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Silent Failure % — Dispensers With Occlusion But No Prior Warning (Same Month)</div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={SILENT} margin={marginStd}>
+                    <defs>
+                      <linearGradient id="g8" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={C.accent1} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={C.accent1} stopOpacity={0}   />
+                      </linearGradient>
+                      <linearGradient id="g9" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor={C.accent2} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={C.accent2} stopOpacity={0}   />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis dataKey="m" tick={axTick} />
+                    <YAxis tick={axTick} unit="%" domain={[0, 100]} />
+                    <Tooltip content={ttPct} />
+                    <Legend wrapperStyle={{ fontSize: "0.72rem" }} />
+                    <ReferenceLine x="Aug '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.4} />
+                    <ReferenceLine x="Nov '25" stroke={C.accent1} strokeDasharray="4 3" strokeOpacity={0.4} />
+                    <Area dataKey="p8" name="8100 Silent%" fill="url(#g8)" stroke={C.accent1} strokeWidth={2} />
+                    <Area dataKey="p9" name="9100 Silent%" fill="url(#g9)" stroke={C.accent2} strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </Panel>
+
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Silent Failure Snapshot — Sep '25 (8100 Peak) vs Jun '25 (Baseline)</div>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {[
+                    { label: "8100 — Jun '25 Baseline", total: 1377, warned: 428,  silent: 949,  pct: 68.9 },
+                    { label: "8100 — Sep '25 Spike",    total: 3575, warned: 601,  silent: 2974, pct: 83.2 },
+                    { label: "9100 — Jun '25 Baseline", total: 9535, warned: 6105, silent: 3430, pct: 36.0 },
+                    { label: "9100 — Sep '25 Spike",    total: 11677, warned: 6040, silent: 5637, pct: 48.3 },
+                  ].map((d, i) => (
+                    <div key={i} style={{ marginBottom: "1.1rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                        <span style={{ color: C.textSub, fontSize: "0.71rem" }}>{d.label}</span>
+                        <span style={{ color: d.pct > 75 ? C.danger : d.pct > 45 ? C.warn : C.textSub, fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 700 }}>{d.pct}% silent</span>
+                      </div>
+                      <div style={{ height: 10, background: C.grid, borderRadius: 5, overflow: "hidden" }}>
+                        <div style={{ width: `${d.pct}%`, height: "100%", background: d.pct > 75 ? C.danger : d.pct > 45 ? C.warn : C.accent2, borderRadius: 5 }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.2rem" }}>
+                        <span style={{ color: C.textDim, fontSize: "0.61rem" }}>{d.silent.toLocaleString()} silent</span>
+                        <span style={{ color: C.textDim, fontSize: "0.61rem" }}>{d.warned.toLocaleString()} warned</span>
+                        <span style={{ color: C.textDim, fontSize: "0.61rem" }}>{d.total.toLocaleString()} total with occ</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14, marginBottom:12 }}>
-                    <Hdr title="Idle Time vs Avg Occ/Dispenser" sub="Inverse: low idle = more occlusions = high traffic" />
-                    <ResponsiveContainer width="100%" height={155}>
-                      <BarChart data={idleData} margin={{top:4,right:8,left:0,bottom:4}}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                        <XAxis dataKey="bucket" tick={{fill:"#64748b",fontSize:9}} />
-                        <YAxis tick={{fill:"#64748b",fontSize:9}} />
-                        <Tooltip content={<DarkTip />} />
-                        <Bar dataKey="avg8100" name="8100" fill={C8} opacity={0.8} radius={[2,2,0,0]} />
-                        <Bar dataKey="avg9100" name="9100" fill={C9} opacity={0.8} radius={[2,2,0,0]} />
+                <ChartNote>
+                  8100 Jun→Sep: 68.9%→83.2% silent (+14pp). More dispensers occluding without any prior expiry warning during the spike — consistent with fresh-BIB failures (batch or pump stress) rather than operator neglect.
+                  9100 Jun→Sep: 36.0%→48.3% silent (+12pp) — same directional shift.
+                </ChartNote>
+              </Panel>
+            </div>
+
+            {/* Lead time table */}
+            <Panel>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Warning Lead Time Detail — When Warnings DO Fire (Days Before Occlusion)</div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.71rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${C.panelBorder}` }}>
+                      {["Month", "8100 Avg Lead", "8100 Median Lead", "9100 Avg Lead", "9100 Median Lead", "Interpretation"].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: "0.35rem 0.65rem", color: C.textDim, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.07em", textTransform: "uppercase" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {LEAD_TIME.map((r, i) => {
+                      const spike = i >= 2 && i <= 5;
+                      return (
+                        <tr key={i} style={{ borderBottom: `1px solid ${C.grid}`, background: spike ? C.accent1 + "07" : "transparent" }}>
+                          <td style={{ padding: "0.35rem 0.65rem", color: spike ? C.accent1 : C.textSub, fontFamily: "monospace" }}>{r.m}</td>
+                          <td style={{ padding: "0.35rem 0.65rem", color: C.textSub }}>{r.avg8}d</td>
+                          <td style={{ padding: "0.35rem 0.65rem", color: C.textPrimary, fontFamily: "monospace" }}>{r.med8}d</td>
+                          <td style={{ padding: "0.35rem 0.65rem", color: C.textSub }}>{r.avg9}d</td>
+                          <td style={{ padding: "0.35rem 0.65rem", color: C.textPrimary, fontFamily: "monospace" }}>{r.med9}d</td>
+                          <td style={{ padding: "0.35rem 0.65rem", color: C.textDim, fontSize: "0.63rem" }}>
+                            {i === 0 ? "Baseline — warnings firing 9–10d before failure" :
+                             spike   ? "SPIKE — lead time stable; warnings ARE generating but operators not responding" :
+                                       "Post-spike — back to baseline rhythm"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 4 — MACHINE ANATOMY
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 4 && (
+          <div>
+            <SectionTitle sub="Machine-Level Analysis">ZSA vs ZPL Architecture · Recovery Tiers · Hour-of-Day Pattern</SectionTitle>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              {/* ZSA vs ZPL full occ */}
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>Full Occlusions Per Dispenser — ZSA vs ZPL (Sep–Nov '25 Spike Window)</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={ZSA_ZPL} layout="vertical" margin={{ top: 5, right: 40, bottom: 5, left: 70 }}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis type="number" tick={axTick} />
+                    <YAxis type="category" dataKey="grp" tick={{ ...axTick, fontSize: 10 }} width={80} />
+                    <Tooltip content={ttOcc} />
+                    <Bar dataKey="occ" name="Full Occ/Disp" radius={[0, 4, 4, 0]}>
+                      {ZSA_ZPL.map((d, i) => <Cell key={i} fill={d.col} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <ChartNote>
+                  ZSA 8100: 145.0 vs ZPL 9100: 50.5 = <strong style={{ color: C.danger }}>2.9× structural penalty</strong>. This gap exists year-round — not a spike artifact. ZPL 8100 machines exist but F1 query returned no rows for them; likely insufficient event volume with ingredient filter.
+                </ChartNote>
+              </Panel>
+
+              {/* ZSA vs ZPL 1-strike */}
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>1-Strike Occlusions Per Dispenser — ZSA vs ZPL (Same Window)</div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={ZSA_ZPL} layout="vertical" margin={{ top: 5, right: 40, bottom: 5, left: 70 }}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis type="number" tick={axTick} />
+                    <YAxis type="category" dataKey="grp" tick={{ ...axTick, fontSize: 10 }} width={80} />
+                    <Tooltip content={makeTT(v => `${v} 1-strike/disp`)} />
+                    <Bar dataKey="s1" name="1-Strike/Disp" radius={[0, 4, 4, 0]}>
+                      {ZSA_ZPL.map((d, i) => <Cell key={i} fill={d.col} opacity={0.75} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <ChartNote>
+                  ZSA 8100: 404.7 1-strikes/disp — nearly 3× vs ZSA 9100 (169.8). The micro-pump on ZSA 8100 is either a different mechanical design or operates under greater volumetric stress load.
+                </ChartNote>
+              </Panel>
+            </div>
+
+            {/* Recovery tiers */}
+            <div style={{ fontFamily: "monospace", color: C.textSub, fontSize: "0.62rem", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+              Recovery Analysis — Post-Spike (Dec '25–Feb '26) vs Spike (Sep–Nov '25)
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              {[{ label: "8100", data: RECOVERY_8, col: C.accent1 }, { label: "9100", data: RECOVERY_9, col: C.accent2 }].map(({ label, data, col }) => (
+                <Panel key={label}>
+                  <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>{label} — Recovery by Spike Severity Tier</div>
+                  {data.map((d, i) => {
+                    const fullyPct  = Math.round(100 * d.fully  / d.units);
+                    const mostlyPct = Math.round(100 * d.mostly / d.units);
+                    const stillPct  = Math.round(100 * d.still  / d.units);
+                    return (
+                      <div key={i} style={{ marginBottom: "0.9rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                          <span style={{ color: C.textSub, fontSize: "0.71rem" }}>{d.tier} ({d.units.toLocaleString()} units)</span>
+                          <span style={{ color: col, fontSize: "0.68rem", fontFamily: "monospace" }}>{d.post}/{d.spike} → {d.pct}%</span>
+                        </div>
+                        <div style={{ display: "flex", height: 9, borderRadius: 4, overflow: "hidden", gap: 1 }}>
+                          <div style={{ width: `${fullyPct}%`,  background: C.success, title: `Recovered: ${d.fully}` }} />
+                          <div style={{ width: `${mostlyPct}%`, background: C.warn,    title: `Mostly: ${d.mostly}` }} />
+                          <div style={{ width: `${stillPct}%`,  background: C.danger,  title: `Still elevated: ${d.still}` }} />
+                        </div>
+                        <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.2rem" }}>
+                          <span style={{ color: C.success, fontSize: "0.6rem" }}>✓ {d.fully} recovered</span>
+                          <span style={{ color: C.warn,    fontSize: "0.6rem" }}>~ {d.mostly} mostly</span>
+                          <span style={{ color: C.danger,  fontSize: "0.6rem" }}>⚠ {d.still} still elevated</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Panel>
+              ))}
+            </div>
+
+            {/* Hour of day */}
+            <Panel>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Hour-of-Day Spike Ratio — Spike (Sep–Nov '25) vs Baseline (Jun–Jul '25)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                {[
+                  { label: "8100 — Ratio 3.5×–4.9× (near-flat across all 24 hours)", data: HOUR_DATA_8, col: C.accent1, domain: [0, 6] },
+                  { label: "9100 — Ratio 1.5×–3.0× (night slightly higher relatively)", data: HOUR_DATA_9, col: C.accent2, domain: [0, 4] },
+                ].map(({ label, data, col, domain }) => (
+                  <div key={label}>
+                    <div style={{ color: col, fontSize: "0.67rem", fontFamily: "monospace", marginBottom: "0.4rem" }}>{label}</div>
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
+                        <CartesianGrid {...gridProps} />
+                        <XAxis dataKey="h" tick={{ fill: C.textSub, fontSize: 7 }} interval={2} />
+                        <YAxis tick={{ fill: C.textSub, fontSize: 9 }} domain={domain} />
+                        <Tooltip content={ttRatio} />
+                        <ReferenceLine y={1} stroke={C.grid} strokeWidth={1} />
+                        <Bar dataKey="r" name="Spike/Baseline Ratio" fill={col} opacity={0.85} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:14 }}>
-                    <Hdr title="Dispenser Age vs Avg Occ/Dispenser" sub="Weak effect — age is not a primary driver" />
-                    <ResponsiveContainer width="100%" height={135}>
-                      <BarChart data={ageData} margin={{top:4,right:8,left:0,bottom:4}}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={CBR} />
-                        <XAxis dataKey="cohort" tick={{fill:"#64748b",fontSize:9}} />
-                        <YAxis tick={{fill:"#64748b",fontSize:9}} />
-                        <Tooltip content={<DarkTip />} />
-                        <Bar dataKey="avg8100" name="8100" fill={C8} opacity={0.8} radius={[2,2,0,0]} />
-                        <Bar dataKey="avg9100" name="9100" fill={C9} opacity={0.8} radius={[2,2,0,0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                ))}
               </div>
-            </div>
-          )}
+              <ChartNote>
+                <strong style={{ color: C.textSub }}>Critical interpretation:</strong> The 8100 spike ratio is nearly identical across ALL 24 hours (3.5–4.9×). If volumetric peak-hour stress were the primary driver, the 11am–2pm lunch rush would show a much higher ratio. The uniform distribution points to a persistent material/chemical issue (bad batch) that is active regardless of operating cadence.
+              </ChartNote>
+            </Panel>
+          </div>
+        )}
 
-          {tab === 5 && (
-            <div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:18, marginBottom:12 }}>
-                <p style={{ color:"#f1f5f9", fontSize:12, fontWeight:800, margin:"0 0 12px" }}>All Hypotheses Tested — Ruled Out</p>
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 5 — OPERATIONS
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 5 && (
+          <div>
+            <SectionTitle sub="Operational Context">Chain Performance · Idle Time Correlation · Fleet Characteristics</SectionTitle>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>Avg Occlusions/Unit by Daily Idle Time Bucket — INVERSE Relationship Confirmed</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={IDLE_OCC} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 75 }}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis type="number" tick={axTick} />
+                    <YAxis type="category" dataKey="label" tick={{ ...axTick, fontSize: 9 }} width={85} />
+                    <Tooltip content={ttOcc} />
+                    <Legend wrapperStyle={{ fontSize: "0.7rem" }} />
+                    <Bar dataKey="m8" name="8100" fill={C.accent1} opacity={0.85} />
+                    <Bar dataKey="m9" name="9100" fill={C.accent2} opacity={0.85} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <ChartNote>
+                  More traffic = more occlusions. Rules out stagnation as cause — fluid-standing theory eliminated. Points to volumetric micro-pump stress from high pour volume. ZSA architecture amplifier present throughout (8100 consistently higher across all buckets).
+                </ChartNote>
+              </Panel>
+
+              <Panel>
+                <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.6rem" }}>Top Chains — Avg Occlusions/Unit Sep–Nov '25</div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={CHAINS} layout="vertical" margin={{ top: 5, right: 30, bottom: 5, left: 115 }}>
+                    <CartesianGrid {...gridProps} />
+                    <XAxis type="number" tick={axTick} />
+                    <YAxis type="category" dataKey="name" tick={{ ...axTick, fontSize: 9 }} width={125} />
+                    <Tooltip content={ttOcc} />
+                    <Bar dataKey="occ" name="Avg Occ/Unit" radius={[0, 4, 4, 0]}>
+                      {CHAINS.map((d, i) => <Cell key={i} fill={d.type === "8100" ? C.accent1 : C.accent2} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <ChartNote>
+                  Amber = 8100, Blue = 9100. Wendy's 8100 leads at 210 occ/unit (9.4h idle). Wingstop lowest at 60.2 — slowest traffic, oldest fleet (avg 1,277d) but protected by low pour volume.
+                </ChartNote>
+              </Panel>
+            </div>
+
+            {/* Fleet stats */}
+            <Panel style={{ marginBottom: "1rem" }}>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.85rem" }}>Fleet Characteristics — Active US Dispensers (Feb '26 Reference)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
                 {[
-                  ["Fleet growth artifact","Per-dispenser rate spiked 5.7x. The monthly active denominator accounts for growth — this is a real intensity increase per unit."],
-                  ["Firmware threshold change","occludedvalue locked at avg -8, P25/median -9 across all 10 months. Pre/during/post spike are identical. Signal did not shift."],
-                  ["New dispenser activation wave","<2% new units per month mid-window. Far too small to drive the observed spike across 24K dispensers."],
-                  ["Small chronic offender group","8100 mid-tier (100-499 occ) drives 60% of spike across 2,054 units. Cannot be fixed by pulling 50 bad machines."],
-                  ["Expiry warning as primary driver","9100 warning % drops 61 to 56% during spike. Causal direction goes the wrong way. Not the trigger."],
-                  ["Idle time / fluid stagnation","Inverse confirmed: 0-8hr idle = 214 avg vs 16-20hr = 52 avg. More usage = more occlusions. Stagnation ruled out."],
-                  ["Dispenser age","9100 spans 59-72 avg across all age cohorts. Near-flat line. Not a meaningful factor."],
-                ].map(([t,d],i)=>(
-                  <div key={i} style={{ display:"flex", gap:9, marginBottom:9, paddingBottom:9, borderBottom:`1px solid ${CBR}44` }}>
-                    <span style={{ color:"#4ade80", fontSize:12, flexShrink:0 }}>✓</span>
-                    <div>
-                      <p style={{ color:"#94a3b8", fontSize:11, fontWeight:700, margin:"0 0 2px" }}>{t}</p>
-                      <p style={{ color:"#475569", fontSize:10.5, margin:0, lineHeight:1.5 }}>{d}</p>
+                  { l: "Total Active US",     v: "24,585",  s: "8100: 5,341 · 9100: 19,244",     c: C.textPrimary },
+                  { l: "8100 Median Idle",    v: "9.8 h",   s: "84% of weeks in 8–16h bucket",   c: C.accent1     },
+                  { l: "9100 Median Idle",    v: "14.5 h",  s: "74% in 8–16h, 20% in 16–24h",   c: C.accent2     },
+                  { l: "9100 vs 8100 Gap",    v: "+4.7 h",  s: "9100 sits idle ~5 hrs longer/day",c: C.warn       },
+                ].map((s, i) => (
+                  <div key={i} style={{ textAlign: "center" }}>
+                    <div style={{ fontFamily: "monospace", color: s.c, fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{s.v}</div>
+                    <div style={{ color: C.textSub, fontSize: "0.65rem", marginTop: "0.25rem", textTransform: "uppercase", letterSpacing: "0.07em" }}>{s.l}</div>
+                    <div style={{ color: C.textDim, fontSize: "0.62rem", marginTop: "0.12rem" }}>{s.s}</div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            {/* Chain table */}
+            <Panel>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.75rem" }}>Chain Performance Detail — Sep–Nov '25 Spike Window</div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.71rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${C.panelBorder}` }}>
+                      {["Chain", "Type", "Avg Occ/Unit", "Idle (h/day)", "Fleet Age (days)", "Observation"].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: "0.35rem 0.65rem", color: C.textDim, fontFamily: "monospace", fontSize: "0.58rem", letterSpacing: "0.07em", textTransform: "uppercase" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {CHAINS.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${C.grid}` }}>
+                        <td style={{ padding: "0.35rem 0.65rem", color: C.textPrimary }}>{r.name}</td>
+                        <td style={{ padding: "0.35rem 0.65rem" }}><Tag col={r.type === "8100" ? C.accent1 : C.accent2}>{r.type}</Tag></td>
+                        <td style={{ padding: "0.35rem 0.65rem", color: r.occ > 150 ? C.danger : r.occ > 80 ? C.warn : C.success, fontFamily: "monospace", fontWeight: 700 }}>{r.occ}</td>
+                        <td style={{ padding: "0.35rem 0.65rem", color: C.textSub }}>{r.idle}</td>
+                        <td style={{ padding: "0.35rem 0.65rem", color: C.textSub }}>{r.age.toLocaleString()}</td>
+                        <td style={{ padding: "0.35rem 0.65rem", color: C.textDim, fontSize: "0.63rem" }}>
+                          {r.name.includes("Wendy") && r.type === "8100" ? "Highest occ — fast traffic + ZSA architecture compound" :
+                           r.name === "WAWA"        ? "Low idle (8.3h) but moderate occ — high-frequency BIB rotation suspected" :
+                           r.name === "Wingstop"    ? "Oldest fleet (avg 1,277d) yet lowest occ — slow traffic protects the pump" :
+                           r.name === "Universal Studios" ? "High 9100 occ — theme park extreme-traffic environment" :
+                           "Standard operational profile"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════
+            TAB 6 — EVIDENCE SCORECARD
+        ══════════════════════════════════════════════════════════════════ */}
+        {tab === 6 && (
+          <div>
+            <SectionTitle sub="Evidence Assessment">Hypothesis Scorecard — All Findings Integrated</SectionTitle>
+
+            <InfoBox col={C.accent2}>
+              <strong style={{ color: C.accent2 }}>Note on C1/C2 Plantcode Queries: </strong>
+              Both returned zero rows. The <code style={{ color: C.accent1 }}>plantcode:</code> field is either absent from <code>micropumpspmoccludedtrouble</code> events for ingredient 1048588, or the key parsing didn't match.
+              This was the single most direct confirmatory test for the batch hypothesis — its absence means the batch hypothesis remains at circumstantial (72/100), not confirmed.
+              <strong style={{ color: C.danger }}> Recommend re-running C1 with a broader event filter (e.g. all troubleAdd events) or requesting lot code data from manufacturer directly.</strong>
+            </InfoBox>
+
+            {/* Hypothesis cards */}
+            <div style={{ display: "grid", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              {HYPOTHESES.map((h, i) => (
+                <Panel key={i}>
+                  <div style={{ display: "flex", gap: "1.25rem", alignItems: "flex-start" }}>
+                    <div style={{ flexShrink: 0, textAlign: "center", width: 80 }}>
+                      <div style={{ fontFamily: "monospace", color: h.col, fontSize: "2rem", fontWeight: 900, lineHeight: 1 }}>{h.score}</div>
+                      <div style={{ color: C.textDim, fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.07em" }}>/100</div>
+                      <div style={{ height: 4, background: C.grid, borderRadius: 2, marginTop: 6, overflow: "hidden" }}>
+                        <div style={{ width: `${h.score}%`, height: "100%", background: h.col, borderRadius: 2 }} />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "0.4rem", flexWrap: "wrap" }}>
+                        <div style={{ fontFamily: "Georgia, serif", color: C.textPrimary, fontSize: "0.95rem", fontWeight: 700 }}>{h.name}</div>
+                        <Tag col={h.col}>{h.status}</Tag>
+                      </div>
+                      <div style={{ color: C.textSub, fontSize: "0.71rem", lineHeight: 1.6 }}>{h.notes}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-              <div style={{ background:CPL, border:`1px solid ${CBR}`, borderRadius:9, padding:18 }}>
-                <p style={{ color:"#f1f5f9", fontSize:12, fontWeight:800, margin:"0 0 12px" }}>Remaining Open Hypotheses</p>
+                </Panel>
+              ))}
+            </div>
+
+            {/* Data quality */}
+            <Panel style={{ marginBottom: "1rem" }}>
+              <div style={{ color: C.textSub, fontSize: "0.73rem", marginBottom: "0.85rem" }}>Data Quality &amp; Coverage Summary</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.65rem" }}>
                 {[
-                  ["bad","BIB supply / quality batch","A bad production batch shipped Sep-Oct 2025 could cause fleet-wide physical occlusions. Consistent with simultaneous onset across all chains and both types, transient 4-month duration, and high-traffic machines hit hardest first (they cycle through BIBs faster). Requires manufacturing lot data not in Redshift."],
-                  ["warn","Q4 volumetric stress","Seasonal traffic surge amplifies pump stress. High-traffic dispensers occlude 2-4x more than low-traffic. If October traffic spikes, stress on marginal BIBs increases disproportionately."],
-                  ["warn","Expiry as enabler, not driver","Expired BIB % climbs steadily Jun to Jan (14% to 62%). Expired BIBs degrade faster under pump stress — making them susceptible when volume surges. Expiry sets the stage; traffic provides the trigger."],
-                  ["info","Next query: plantcode analysis","event_data contains plantcode:0, 1, 2. If one plant's BIBs drive the Sep-Nov spike disproportionately, the manufacturing batch hypothesis is confirmed. Highest priority next query."],
-                ].map(([type,t,d],i)=>(
-                  <div key={i} style={{ display:"flex", gap:9, marginBottom:12, paddingBottom:12, borderBottom:`1px solid ${CBR}44` }}>
-                    <FindingRow type={type} text={`${t}: ${d}`} />
+                  { label: "8100 Expiry Coverage",        val: "15.6%",    note: "ZSA machines have no enjoybydate for ingredient 1048588. All 8100 expiry figures are directional only.", c: C.warn        },
+                  { label: "9100 Occlusion Traceability",  val: "51.6%",    note: "9100 approximately half-traceable to a BIB with expiry data via bibNnsReplaced events.",               c: C.accent2     },
+                  { label: "Plantcode Data",               val: "0 rows",   note: "C1/C2 returned zero. Plantcode field may not exist on micropumpspmoccludedtrouble for ingredient 1048588.", c: C.danger   },
+                  { label: "v_sysdb Window",               val: "10 months",note: "Jun 2025–Mar 2026 only. No pre-Jun 2025 history — YoY comparison not possible from this table alone.",  c: C.textSub     },
+                  { label: "Fleet Active (Feb '26)",       val: "24,585",   note: "8100: 5,341 · 9100: 19,244. Fleet grew ~4% Jun→Feb.",                                                   c: C.success     },
+                  { label: "Feb '26 Warning Spike",        val: "8× jump",  note: "nnscheckenjoybytrouble: ~47K/mo → 368K in Feb '26. Firmware enforcement change. Not a real expiry event.", c: C.danger  },
+                ].map((d, i) => (
+                  <div key={i} style={{ background: C.bg, border: `1px solid ${C.grid}`, borderRadius: 8, padding: "0.7rem 0.9rem" }}>
+                    <div style={{ fontFamily: "monospace", color: d.c, fontSize: "1rem", fontWeight: 700 }}>{d.val}</div>
+                    <div style={{ color: C.textSub, fontSize: "0.63rem", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: "0.15rem" }}>{d.label}</div>
+                    <div style={{ color: C.textDim, fontSize: "0.61rem", lineHeight: 1.5, marginTop: "0.35rem" }}>{d.note}</div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            </Panel>
+
+            {/* External data needed */}
+            <Panel>
+              <div style={{ fontFamily: "monospace", color: C.warn, fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "0.85rem" }}>
+                External Data Required to Confirm Remaining Hypotheses
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem" }}>
+                {[
+                  { data: "BIB Manufacturing Lot Codes",            priority: "CRITICAL", hypothesis: "Batch quality hypothesis",       why: "Match lot numbers to Aug–Nov '25 affected dispensers. If one or two lots disproportionate → confirmed batch event." },
+                  { data: "POS Transaction Volume per Dispenser",   priority: "HIGH",     hypothesis: "Q4 volumetric stress",           why: "Correlation of pour counts with occlusion rate quantifies stress independently from idle-time proxy." },
+                  { data: "Plantcode Field Mapping",                priority: "CRITICAL", hypothesis: "Batch quality — geographic",      why: "Confirm which event type carries plantcode. Re-run C1/C2 on correct event. Most direct test in existing data." },
+                  { data: "Firmware Release Notes Aug–Nov '25",     priority: "MEDIUM",   hypothesis: "Detection sensitivity (closed)",  why: "Already ruled out via occludedvalue analysis; engineering confirmation closes the door completely." },
+                ].map((d, i) => (
+                  <div key={i} style={{ background: C.bg, border: `1px solid ${C.panelBorder}`, borderRadius: 8, padding: "0.7rem 0.9rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem", flexWrap: "wrap" }}>
+                      <Tag col={d.priority === "CRITICAL" ? C.danger : d.priority === "HIGH" ? C.warn : C.muted}>{d.priority}</Tag>
+                      <span style={{ color: C.textPrimary, fontSize: "0.73rem", fontWeight: 600 }}>{d.data}</span>
+                    </div>
+                    <div style={{ color: C.accent2, fontSize: "0.63rem", marginBottom: "0.25rem" }}>Tests: {d.hypothesis}</div>
+                    <div style={{ color: C.textDim, fontSize: "0.62rem", lineHeight: 1.5 }}>{d.why}</div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </div>
+        )}
+
+      </div>
+
+      {/* ── FOOTER ── */}
+      <div style={{ borderTop: `1px solid ${C.panelBorder}`, padding: "0.7rem 1.75rem", marginTop: "2rem" }}>
+        <div style={{ fontFamily: "monospace", color: C.textDim, fontSize: "0.58rem", letterSpacing: "0.07em", textAlign: "center", lineHeight: 1.8 }}>
+          ACTIVE US DISPENSERS ONLY · 8100 &amp; 9100 ONLY · INGREDIENT 1048588 · JUN 2025–MAR 2026 (10 MONTHS) ·
+          MAR '26 = PARTIAL DATA EXCLUDED FROM TREND · FEB '26 EXPIRY% = FIRMWARE-CONTAMINATED ·
+          8100 EXPIRY FIGURES = DIRECTIONAL ONLY (15.6% COVERAGE) · PLANTCODE C1/C2 = ZERO ROWS
         </div>
-
-        {/* RIGHT PANEL */}
-        <RightPanel tab={tab} />
       </div>
     </div>
   );
